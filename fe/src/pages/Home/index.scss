@@ -1,0 +1,13 @@
+#home {
+  .welcome {
+    font-size: var(--big-title-font-size)!important;
+    color: var(--title-color);
+    text-align: center;
+  }
+  .search-bar {
+    margin-top: 2%;
+  }
+  .result {
+    margin-top: 2%;
+  }
+}

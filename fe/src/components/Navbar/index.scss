@@ -1,0 +1,17 @@
+.navbar {
+  padding: 10px;
+  background-color: #ffffff;
+  .link {
+    font-size: large;
+    display: flex;
+    justify-content: space-evenly;
+  }
+
+  .auth {
+    font-size: large;
+    display: flex;
+    .button {
+      margin-left: 10px;
+    }
+  }
+}
