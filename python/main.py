@@ -8,6 +8,7 @@ from jose import JWTError, jwt
 from typing import Union
 import os.path
 from services.storage import upload_file;
+from services.handWrittenRecognization import detect_document;
 
 # dataLoader = DataLoader('auto', 'image_based.pdf', "thử ocr trên pdf")
 # document = dataLoader.storeDocument()
@@ -59,12 +60,6 @@ async def store_document(file: UploadFile = File('file'), Authorization: str = H
   token = Authorization.split(' ')[1]
   user = await get_current_user(token)
   print(file.content_type)
-  static_folder = "static"
-  os.makedirs(static_folder, exist_ok=True)
-  destination_path = os.path.join(static_folder, file.filename)
-  if not os.path.exists(destination_path):
-      with open(destination_path, "wb") as dest_file:
-         dest_file.write(file.file.read())
   data_storage = DataLoader(file.filename, user, method)
   upload_file('kltn-1912', file.file.read(), file.content_type ,file.filename)
   await file.close()

@@ -1,15 +1,9 @@
 import React from 'react';
-import { Routes, Route, useNavigate } from 'react-router-dom';
+import { Routes, Route} from 'react-router-dom';
 import Signup from './Signup';
 import Login from './Login';
 
 const Auth = () => {
-  // const navigate = useNavigate();
-  // const { authUser } = useContext(AuthContext);
-  // if (authUser) {
-  //   navigate('/');
-  //   return;
-  // }
 
   return (
     <Routes>

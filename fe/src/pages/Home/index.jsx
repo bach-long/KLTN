@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { Input, Row, Col, Typography} from 'antd';
+import SpinLoading from '../../components/Loading/SpinLoading';
 import './index.scss'
 import { searchDocument } from '../../services/Search';
 import {toast} from 'react-toastify'
@@ -11,12 +12,22 @@ function Home() {
   const [page, setPage] = useState(1)
   const [perPage, setPerPage] = useState(20)
   const [result, setResult] = useState([])
+  const [loading, setLoading] = useState(false);
 
   const handleSearch = async (page, per_page, query, params) => {
-    const response = await searchDocument(page, per_page, query, params);
-    setResult(response.data.documents);
-    console.log(response);
-  }
+    try {
+      setLoading(true); // Set loading to true before making the API call
+
+      const response = await searchDocument(page, per_page, query, params);
+      setResult(response.data.documents);
+      console.log(response);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      toast.error('An error occurred while fetching data.');
+    } finally {
+      setLoading(false); // Set loading to false after the API call completes, regardless of success or failure
+    }
+  };
 
   return (
     <div id="home">
@@ -33,16 +44,23 @@ function Home() {
             enterButton
             allowClear
             size="large"
+            disabled={loading ? true : false}
           />
         </Col>
       </Row>
-      {result.length > 0 && <Row gutter={[16, 16]} className='result' style={{display: 'flex', justifyContent: 'center'}}>
-        {result.map(document => (
-          <Col span={4} key={document.id}>
-              {<Thumbnail url={`http://localhost:8000/static/${document.meta.link}`} title={document.meta.title} key={document.meta.link}/>}
-          </Col>)
-        )}
-      </Row>}
+      {loading ? ( // Render a loading LoadingOutlinedner when loading is true
+        <SpinLoading/>
+      ) : (
+        result.length > 0 && (
+          <Row gutter={[16, 16]} className="result" style={{ marginLeft: '10%', marginRight: '10%'}}>
+            {result.map((document) => (
+              <Col span={6} key={document.id}>
+                {<Thumbnail url={`http://localhost:8000/static/${document.meta.link}`} title={document.meta.title} key={document.meta.link} />}
+              </Col>
+            ))}
+          </Row>
+        )
+      )}
     </div>
   )
 }

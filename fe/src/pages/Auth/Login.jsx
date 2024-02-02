@@ -1,22 +1,33 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Button, Form, Input } from 'antd';
 import './login.scss'
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { login } from '../../services/Auth';
-import { useContext } from 'react';
+import { useContext, useState } from 'react';
 import { AuthContext } from '../../providers/AuthProvider';
 
 function Login() {
   const [form] = Form.useForm();
   const {setAuthUser} = useContext(AuthContext)
+  const [loading, setLoading] = useState(false);
+
+  const navigate = useNavigate();
 
   const onFinish = async (values) => {
-    console.log(values)
-    const data = await login(values);
-    console.log(data);
-    localStorage.setItem("accessToken", data.data.token)
-    localStorage.setItem('authUser', JSON.stringify(data.data.user))
-    setAuthUser(data.data.user)
+    try {
+      setLoading(true);
+      console.log(values)
+      const data = await login(values);
+      console.log(data);
+      localStorage.setItem("accessToken", data.data.token)
+      localStorage.setItem('authUser', JSON.stringify(data.data.user))
+      setAuthUser(data.data.user)
+      navigate('/')
+    } catch (err) {
+      console.error('Error fetching data:', err);
+    } finally {
+      setLoading(false);
+    }
 
   };
   const onFinishFailed = (errorInfo) => {

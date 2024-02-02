@@ -7,6 +7,7 @@ const bcrypt = require("bcrypt")
 const jwt = require('jsonwebtoken')
 const dotenv = require('dotenv')
 const saltRounds = 10;
+const createFolder = require('../services/createFolder');
 
 dotenv.config();
 
@@ -40,16 +41,16 @@ router.post('/login', validate.validateLogin(), async (req, res) => {
 router.post('/signup', validate.validateRegisterUser(), async (req, res) => {
   try {
     const errors = validationResult(req);
-    console.log(errors);
     if (!errors.isEmpty()) {
       throw new Error("Dữ liệu không hợp lệ")
     }
-
     const user = await User.create({
       username: req.body.username,
       email: req.body.email,
       password: bcrypt.hashSync(req.body.password, saltRounds)
     })
+
+    await createFolder(process.env.BUCKET_NAME, `${user.id}/trash/`);
 
     res.status(200).json({success: 1, message: "Đăng ký thành công", data: user})
   } catch (error) {
