@@ -1,23 +1,35 @@
-import React from 'react'
+import {useState} from 'react'
 import { Button, Form, Input } from 'antd';
 import './signup.scss'
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { signup } from '../../services/Auth';
-
-const onFinish = async (values) => {
-  const data = await signup(values);
-  console.log(data);
-};
-const onFinishFailed = (errorInfo) => {
-  console.log('Failed:', errorInfo);
-};
+import SpinLoading from '../../components/Loading/SpinLoading';
 
 function Signup() {
+  const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
+  const navigate = useNavigate();
+
+  const onFinish = async (values) => {
+    try {
+      setLoading(true);
+      const data = await signup(values);
+      console.log(data);
+      navigate('/login');
+    } catch (err) {
+      console.error('Error fetching data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+  const onFinishFailed = (errorInfo) => {
+    console.log('Failed:', errorInfo);
+  };
 
   return (
     <div id='signup'>
       <Form
+        disabled={loading ? true : false}
         form={form}
         name="Signup"
         labelCol={{
@@ -109,9 +121,11 @@ function Signup() {
             span: 16,
           }}
         >
+          { loading ? <SpinLoading/> :
           <Button type="primary" htmlType="submit" style={{fontSize: '16px', fontWeight: 600}}>
             Signup
           </Button>
+          }
         </Form.Item>
         <span>Đã có tài khoản? <Link to="/auth/login">Đăng nhập</Link></span>
       </Form>
