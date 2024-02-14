@@ -31,7 +31,7 @@ router.post('/login', validate.validateLogin(), async (req, res) => {
       res.status(403).json({success: 0, message: "Thông tin đăng nhập sai"})
     }
 
-    const token = jwt.sign(user.dataValues, process.env.ACCESS_TOKEN_SECRET, {expiresIn: "2 days"})
+    const token = jwt.sign({id: user.id,...user.dataValues}, process.env.ACCESS_TOKEN_SECRET, {expiresIn: "2 days"})
     res.status(202).json({success: 1, message: "Đăng nhập thành công", data: {user, token}})
   } catch (error) {
     res.status(503).json({success: 0, message: error.message})

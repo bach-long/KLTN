@@ -23,4 +23,4 @@ def detect_document(image_path):
             "https://cloud.google.com/apis/design/errors".format(response.error.message)
         )
 
-detect_document('././static/Screenshot from 2024-02-02 17-19-50.png')
+# detect_document('././static/Screenshot from 2024-02-02 17-19-50.png')

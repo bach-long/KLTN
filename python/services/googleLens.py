@@ -13,7 +13,7 @@ def post_image(image_path, endpoint_url):
         image_data = read_image_file(image_path)
 
         # Create form data
-        files = {'encoded_image': ('Screenshot from 2024-02-02 10-54-06.png', image_data, 'image/png')}
+        files = {'encoded_image': ('Screenshot from 2024-02-02 17-19-50.png', image_data, 'image/png')}
 
         # Make a POST request using requests with form data
         response = requests.post(endpoint_url, files=files)
