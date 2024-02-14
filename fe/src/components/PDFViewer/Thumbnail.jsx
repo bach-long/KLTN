@@ -2,7 +2,10 @@ import pageThumbnailPlugin from './pageThumbnailPlugin';
 import { thumbnailPlugin } from '@react-pdf-viewer/thumbnail';
 import PropTypes from 'prop-types';
 import { Viewer } from '@react-pdf-viewer/core';
+import { FileTwoTone, DeleteTwoTone, StarTwoTone, FolderOpenTwoTone } from '@ant-design/icons'
+import { Popover } from 'antd';
 import './thumbnail.scss'
+import Options from '../Options';
 
 const Thumbnail = ({url, title}) => {
   const thumbnailPluginInstance = thumbnailPlugin();
@@ -13,10 +16,10 @@ const Thumbnail = ({url, title}) => {
   });
 
   return (
-    <div className='item'>
+    <Popover className='item' placement='rightTop' title={<div>Tùy chọn</div>} content={Options} style={{cursor: "pointer"}}>
       <Viewer fileUrl={url} plugins={[pageThumbnailPluginInstance, thumbnailPluginInstance]} />
       <p>{title}</p>
-    </div>)
+    </Popover>)
 }
 
 Thumbnail.propTypes = {

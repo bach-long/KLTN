@@ -1,6 +1,43 @@
 from google.cloud import storage
 from google.cloud.exceptions import Conflict
 
+def cors_configuration(bucket_name):
+    """Set a bucket's CORS policies configuration."""
+    # bucket_name = "your-bucket-name"
+
+    storage_client = storage.Client()
+    bucket = storage_client.get_bucket(bucket_name)
+    bucket.cors = [{
+        "origin": [
+          "*"
+        ],
+        "method": [
+          "*"
+        ],
+        "responseHeader": [
+          "*"
+        ],
+        "maxAgeSeconds": 3600
+    }]
+    bucket.patch()
+
+    print(f"Set CORS policies for bucket {bucket.name} is {bucket.cors}")
+
+def bucket_metadata(bucket_name):
+    """Prints out a bucket's metadata."""
+    # bucket_name = 'your-bucket-name'
+
+    storage_client = storage.Client()
+    bucket = storage_client.get_bucket(bucket_name)
+
+    print(f"ID: {bucket.id}")
+    print(f"Name: {bucket.name}")
+    print(f"Storage Class: {bucket.storage_class}")
+    print(f"Cors: {bucket.cors}")
+    print(
+        f"Public Access Prevention: {bucket.iam_configuration.public_access_prevention}"
+    )
+
 def get_autoclass(bucket_name):
     """Get the Autoclass setting for a bucket."""
     # The ID of your GCS bucket
@@ -177,41 +214,20 @@ def move_folder(source_bucket_name, source_folder_name, destination_folder_name)
         print(f'Moved {blob.name} to {destination_blob.name}')
 
 def list_folder_contents(bucket_name, folder_name, delimiter = None):
-    # Initialize the Google Cloud Storage client
     client = storage.Client()
-
-    blobs = client.list_blobs(bucket_name, prefix=folder_name, delimiter=delimiter)
+    folders = []
+    files = []
+    blobs = client.list_blobs(bucket_name, prefix=folder_name)
     for blob in blobs:
-        print(blob.name)
+        child_name = blob.name[len(folder_name):].split('/', 1)
+        if len(child_name) == 2:
+            if blob.name.endswith('/'):
+                folders.append({"name": child_name[0], "type": "folder"})
+        elif len(child_name) == 1:
+            files.append({"name": child_name[0], "type": "file", "url": blob.public_url})
 
-    if delimiter:
-        print("Prefixes:")
-        for prefix in blobs.prefixes:
-            print(prefix)
+    return {"folders": folders, "files": files}
 
-    # Separate blobs into folders and files
-    # folders = set()
-    # files = set()
-
-    # for blob in blobs:
-    #     print(blob.name)
-    #     # Extract the relative path within the folder
-    #     relative_path = blob.name[len(folder_name):]
-
-    #     # Split the path into parts to identify folders and files
-    #     parts = relative_path.split('/')
-
-    #     # If there are parts, it's a subfolder
-    #     if len(parts) > 1:
-    #         folders.add(parts[0] + '/')
-    #     # If there's only one part, it's a file
-    #     elif len(parts) == 1 and parts[0]:
-    #         files.add(parts[0])
-    # print(folders, files)
-
-# Example usage
-
-# contents = list_folder_contents("kltn-1912", "new/")
 
 
 
