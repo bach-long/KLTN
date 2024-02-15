@@ -19,7 +19,6 @@ import os
 app = FastAPI(debug=True)
 load_dotenv()
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -37,6 +36,7 @@ credentials_exception = HTTPException(
 ACCESS_TOKEN_SECRET = os.getenv('ACCESS_TOKEN_SECRET')
 HASH_ALGORITHM = os.getenv('HASH_ALGORITHM')
 BUCKET_NAME = os.getenv('BUCKET_NAME')
+print(BUCKET_NAME)
 
 cors_configuration(BUCKET_NAME)
 

@@ -15,7 +15,7 @@ function Signup() {
       setLoading(true);
       const data = await signup(values);
       console.log(data);
-      navigate('/login');
+      navigate('/auth/login');
     } catch (err) {
       console.error('Error fetching data:', err);
     } finally {
