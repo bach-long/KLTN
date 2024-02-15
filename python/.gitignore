@@ -1,3 +1,6 @@
 __pycache__
 services/__pycache__
 static
+.env
+alembic
+alembic.ini
