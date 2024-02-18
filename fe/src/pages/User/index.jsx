@@ -10,7 +10,6 @@ function User() {
       <Routes>
           <Route path="/" element={<Home/>}/>
           <Route path="/auth/*" element={<Auth/>}/>
-          <Route path='/upload' element={<UploadDocument/>}/>
           <Route path='/me' element={<Me/>}/>
       </Routes>
   )

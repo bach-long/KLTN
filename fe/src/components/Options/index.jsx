@@ -1,13 +1,27 @@
 import { FileTwoTone, DeleteTwoTone, StarTwoTone, FolderOpenTwoTone } from '@ant-design/icons'
+import { Menu } from 'antd'
 
 const Options = () => {
+  const items = [
+    {
+     label: <span><FileTwoTone/> Xem chi tiết</span>,
+     key: "detail"
+    },
+    {
+     label: <span><DeleteTwoTone/> Xóa</span>,
+     key: "delete"
+    },
+    {
+     label: <span><StarTwoTone /> Tài liệu quan trọng</span>,
+     key: "mark"
+    },
+    {
+     label: <span><FolderOpenTwoTone /> Di chuyển</span>,
+     key: "move"
+    },
+  ]
   return (
-    <div className='options'>
-      <p><FileTwoTone/> Xem chi tiết</p>
-      <p><DeleteTwoTone/> Xóa</p>
-      <p><StarTwoTone /> Tài liệu quan trọng</p>
-      <p><FolderOpenTwoTone /> Di chuyển</p>
-    </div>
+    <Menu className='options' items={items}/>
   )
 }
 

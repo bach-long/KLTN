@@ -13,9 +13,10 @@ async function createFolder(bucketName, folderName) {
       console.log(`Folder ${folderName} created successfully in ${bucketName}.`);
     } else {
       console.log(`Folder ${folderName} already exists in ${bucketName}.`);
+      throw new Error('Folder đã tồn tại')
     }
   } catch (error) {
-    console.error('Error creating folder:', error.message);
+    throw error
   }
 }
 

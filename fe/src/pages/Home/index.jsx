@@ -1,10 +1,11 @@
-import React, { useState } from 'react'
+import React, { useContext, useState } from 'react'
 import { Input, Row, Col, Typography} from 'antd';
 import SpinLoading from '../../components/Loading/SpinLoading';
 import './index.scss'
 import { searchDocument } from '../../services/Search';
 import {toast} from 'react-toastify'
 import Thumbnail from '../../components/PDFViewer/Thumbnail';
+import { AuthContext } from '../../providers/AuthProvider'
 const { Search } = Input;
 const { Title } = Typography
 
@@ -13,6 +14,7 @@ function Home() {
   const [perPage, setPerPage] = useState(20)
   const [result, setResult] = useState([])
   const [loading, setLoading] = useState(false);
+  const {authUser} = useContext(AuthContext)
 
   const handleSearch = async (page, per_page, query, params) => {
     try {
@@ -55,7 +57,7 @@ function Home() {
           <Row gutter={[16, 16]} className="result" style={{ marginLeft: '10%', marginRight: '10%'}}>
             {result.map((document) => (
               <Col span={6} key={document.id}>
-                {<Thumbnail url={`http://localhost:8000/static/${document.meta.link}`} title={document.meta.title} key={document.meta.link} />}
+                {<Thumbnail url={`https://storage.googleapis.com/kltn-1912/${authUser.id}/${document.meta.link}`} title={document.meta.title} key={document.meta.link} />}
               </Col>
             ))}
           </Row>
