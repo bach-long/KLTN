@@ -1,13 +1,14 @@
 const express = require('express');
 const router = express.Router();
-const { User } = require('../models');
+const { User, Document } = require('../models');
 const {validationResult} = require('express-validator');
 const { validate } = require('../validators/auth');
-const bcrypt = require("bcrypt")
-const jwt = require('jsonwebtoken')
-const dotenv = require('dotenv')
+const bcrypt = require("bcrypt");
+const jwt = require('jsonwebtoken');
+const dotenv = require('dotenv');
 const saltRounds = 10;
 const createFolder = require('../services/createFolder');
+const {sequelize} = require('../models');
 
 dotenv.config();
 
@@ -44,15 +45,28 @@ router.post('/signup', validate.validateRegisterUser(), async (req, res) => {
     if (!errors.isEmpty()) {
       throw new Error("Dữ liệu không hợp lệ")
     }
-    const user = await User.create({
-      username: req.body.username,
-      email: req.body.email,
-      password: bcrypt.hashSync(req.body.password, saltRounds)
-    })
+    const result = await sequelize.transaction(async (t) => {
 
-    await createFolder(process.env.BUCKET_NAME, `${user.id}/trash/`);
+      const user = await User.create({
+        username: req.body.username,
+        email: req.body.email,
+        password: bcrypt.hashSync(req.body.password, saltRounds)
+      }, {transaction: t});
 
-    res.status(200).json({success: 1, message: "Đăng ký thành công", data: user})
+      await createFolder(process.env.BUCKET_NAME, `${user.id}/trash/`);
+
+      const document = await Document.create({
+        name: `${user.id}`,
+        type: "folder",
+        user_id: user.id,
+      }, {transaction: t});
+
+      return user;
+
+    });
+
+
+    res.status(200).json({success: 1, message: "Đăng ký thành công", data: result})
   } catch (error) {
     res.status(503).json({success: 0, message: error.message})
   }

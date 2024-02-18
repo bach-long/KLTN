@@ -13,7 +13,6 @@ function App() {
 
   const items = [
     {name: 'Home', path: '/'},
-    {name: 'Tải lên', path: '/upload'},
     {name: 'Cá nhân', path: '/me'},
   ]
 

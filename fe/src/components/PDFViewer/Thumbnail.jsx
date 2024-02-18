@@ -2,7 +2,6 @@ import pageThumbnailPlugin from './pageThumbnailPlugin';
 import { thumbnailPlugin } from '@react-pdf-viewer/thumbnail';
 import PropTypes from 'prop-types';
 import { Viewer } from '@react-pdf-viewer/core';
-import { FileTwoTone, DeleteTwoTone, StarTwoTone, FolderOpenTwoTone } from '@ant-design/icons'
 import { Popover } from 'antd';
 import './thumbnail.scss'
 import Options from '../Options';
@@ -12,12 +11,12 @@ const Thumbnail = ({url, title}) => {
   const { Cover } = thumbnailPluginInstance;
 
   const pageThumbnailPluginInstance = pageThumbnailPlugin({
-      PageThumbnail: <Cover getPageIndex={() => 0} width={220} />,
+      PageThumbnail: <Cover getPageIndex={() => 0} width={250} />,
   });
 
   return (
-    <Popover className='item' placement='rightTop' title={<div>Tùy chọn</div>} content={Options} style={{cursor: "pointer"}}>
-      <Viewer fileUrl={url} plugins={[pageThumbnailPluginInstance, thumbnailPluginInstance]} />
+    <Popover onContextMenu={e => {e.stopPropagation()}} className='item' placement='rightTop' title={<div>Tùy chọn</div>} content={Options} style={{cursor: "pointer"}} trigger={['contextMenu']}>
+      <Viewer fileUrl={url} plugins={[pageThumbnailPluginInstance, thumbnailPluginInstance]}/>
       <p>{title}</p>
     </Popover>)
 }

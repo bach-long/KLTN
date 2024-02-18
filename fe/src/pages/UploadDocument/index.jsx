@@ -1,13 +1,13 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { InboxOutlined } from '@ant-design/icons';
-import { Upload, Modal, Row, Button } from 'antd';
+import { Upload, Button, Modal } from 'antd';
 import './index.scss'
 import PDFViewer from '../../components/PDFViewer';
-import { storeDocument } from '../../services/Store';
+import { storeDocument } from '../../services/documents';
 
 const { Dragger } = Upload;
 
-function UploadDocument() {
+function UploadDocument({open, setOpen, parentId}) {
   const [file, setFile] = useState();
   const [url, setUrl] = useState();
 
@@ -36,12 +36,24 @@ function UploadDocument() {
   const handleStore = async (file) => {
     const formData = new FormData()
     formData.append('file', file)
+    if(parentId) formData.append('parent_id', parentId)
+    formData.append('type', 'file')
     const data = await storeDocument(formData)
     console.log(data);
   }
 
   return (
-    <div id='upload'>
+    <Modal
+      id='upload'
+      centered
+      open={open}
+      onCancel={()=>{
+        setOpen(false)
+        setFile()
+        setUrl()
+      }}
+      width={'90vw'}
+    >
       <Dragger {...props} maxCount={1} accept='.pdf' style={{
           width: '15vw',
           height: 'fit-content',
@@ -58,7 +70,7 @@ function UploadDocument() {
           <Button onClick={() => {handleStore(file)}} type='primary' style={{fontSize: '1rem', fontWeight: 600, marginTop: '10px'}}>Lưu Tài liệu</Button>
         </>
       }
-    </div>
+    </Modal>
   )
 }
 

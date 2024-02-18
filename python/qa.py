@@ -8,12 +8,12 @@ import json
 custom_query = {"size": 10,
                 "query": {
                     "bool": {
-                        "should": [{
-                            "multi_match": {
+                        "should": [
+                            {"multi_match": {
                                 "query": "${query}",
                                 "type": "most_fields",
-                                "fields": ["content", "title"]
-                              }
+                                "fields": ["title", "content"]
+                            }
                         }],
                         "filter": "${filters}"
                     }
