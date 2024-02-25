@@ -23,7 +23,7 @@ class DataLoader():
       elif self.method == 'auto':
           ocr_option = 'auto'
 
-      converter = PDFToTextConverter(remove_numeric_tables=True, valid_languages=["en","vie"], ocr=ocr_option, ocr_language="eng+vie", )
+      converter = PDFToTextConverter(remove_numeric_tables=True, valid_languages=["en","vie"], ocr=ocr_option, ocr_language="eng+vie")
       current_time = datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%fZ")
       doc_pdf = converter.convert('./static/' + self.name,
                                   meta={"link": f'{self.parent_id}_{self.name}',
@@ -51,9 +51,11 @@ class DataLoader():
       result[0].content += result[0].meta['title']
       return result
 
-  async def storeDocument(self):
+  def storeDocument(self):
       documents = self.preprocessing()
-      document_store.write_documents(documents)
+      print(len(documents))
+      print(documents[-1].content)
+      document_store.write_documents(documents, batch_size=len(documents) / 3)
       return documents
 
   async def addFolderInfo(self):

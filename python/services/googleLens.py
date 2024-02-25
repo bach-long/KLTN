@@ -1,5 +1,7 @@
 import requests
 import re;
+from io import BytesIO
+import fitz  # import the bindings
 
 # Function to read the image file as bytes
 def read_image_file(file_path):
@@ -9,11 +11,16 @@ def read_image_file(file_path):
 # Function to post image as form data
 def post_image(image_path, endpoint_url):
     try:
-        # Read the image file as bytes
-        image_data = read_image_file(image_path)
+        image_data = None
+        doc = fitz.open(image_path)  # open document
+        print(doc)
+        for page in doc:  # iterate through the pages
+            pixmap = page.get_pixmap()
+            image_data = pixmap.pil_tobytes(format="png")
+            break
 
         # Create form data
-        files = {'encoded_image': ('Screenshot from 2024-02-02 17-19-50.png', image_data, 'image/png')}
+        files = {'encoded_image': ('image.png', image_data, 'image/png')}
 
         # Make a POST request using requests with form data
         response = requests.post(endpoint_url, files=files)
@@ -33,7 +40,7 @@ def post_image(image_path, endpoint_url):
         print('Error posting image:', str(e))
 
 # Example usage
-image_path = '././static/Screenshot from 2024-02-02 17-19-50.png'
+image_path = "./services/thitrantamson_hqb_thg.HN.2013.02/HN.2013.01.2013-03-01.12(1).pdf"
 endpoint_url = 'https://lens.google.com/v3/upload'
 
 post_image(image_path, endpoint_url)
