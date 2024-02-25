@@ -14,6 +14,7 @@ from services.handWrittenRecognization import detect_document;
 from dotenv import load_dotenv;
 import os
 import tensorflow as tf
+from jobs.handleWriteDocument import bulkInsertDocuments
 
 # dataLoader = DataLoader('auto', 'image_based.pdf', "thử ocr trên pdf")
 # document = dataLoader.storeDocument()
@@ -76,24 +77,19 @@ async def store_document(parent_id = Body(None),
 
   if type == 'file':
     os.makedirs("static", exist_ok=True)
-    destination_path = os.path.join("static", file.filename)
     content = file.file.read()
-    if not os.path.exists(destination_path):
-        with open(destination_path, "wb") as dest_file:
-            dest_file.write(content)
-    data_storage = DataLoader(file.filename, user, parent_id, method)
     upload_file('kltn-1912', content, file.content_type ,f'{user["id"]}/{parent_id}_{file.filename}')
-    result = await data_storage.storeDocument()
+    bulkInsertDocuments.delay(file.filename, user, parent_id, method, content)
     document = Document(name=file.filename, type="file", user_id=user["id"], parent_id=parent_id, url=f'https://storage.googleapis.com/{BUCKET_NAME}/{user["id"]}/{parent_id}_{file.filename}')
     db.add(document)
     db.commit()
     db.refresh(document)
     await file.close()
-    os.remove(destination_path)
   elif type == 'folder':
+    print(parent_id)
     data_storage = DataLoader(folder_name, user, parent_id, method)
     result = await data_storage.addFolderInfo()
-    document = Document(name=folder_name, type="folder", user_id=user["id"])
+    document = Document(name=folder_name, type="folder", user_id=user["id"], parent_id=parent_id)
     db.add(document)
     db.commit()
     db.refresh(document)
