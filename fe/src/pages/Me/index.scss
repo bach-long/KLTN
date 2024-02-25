@@ -1,7 +1,11 @@
-.me {
-  .documents {
-    border-radius: 10px;
-    padding: 5px;
-    background-color: var(--background);
+#my-documents{
+  height: 100%;
+  .me {
+    height: 100%;
+    .documents {
+      border-radius: 10px;
+      padding: 5px;
+      background-color: var(--background);
+    }
   }
 }
