@@ -1,5 +1,5 @@
 import React from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import PropTypes from 'prop-types'
 import './index.scss'
 import {Row, Col, Button} from 'antd'
@@ -7,19 +7,16 @@ import { AuthContext } from '../../providers/AuthProvider'
 import { useContext } from 'react'
 
 function Navbar({items}) {
+  const navigate = useNavigate();
   const {authUser, setAuthUser} = useContext(AuthContext)
   const handleLogout = () => {
+    navigate('/auth/login')
     setAuthUser(null)
     localStorage.clear();
   }
 
   return (
     <Row className='navbar'>
-      <Col className='link' span={16}>
-        {items.map((element) => {
-          return (<Link to={element.path} key={element.name}>{element.name}</Link>)
-        })}
-      </Col>
       <Col className='auth' span={8}>
         {
           authUser ?

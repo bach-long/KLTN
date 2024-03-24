@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { InboxOutlined } from '@ant-design/icons';
 import { Upload, Button, Modal } from 'antd';
 import './index.scss'
@@ -7,20 +7,10 @@ import { storeDocument } from '../../services/documents';
 
 const { Dragger } = Upload;
 
-function UploadDocument({open, setOpen, parentId}) {
+function UploadDocument({open, setOpen, parentId, fileType}) {
+  console.log(fileType)
   const [file, setFile] = useState();
-  const [url, setUrl] = useState();
-
-  useEffect(() => {
-    if (file) {
-      console.log(file);
-      const url = URL.createObjectURL(file);
-      setUrl(url);
-      return () => {
-        URL.revokeObjectURL(url); // Release the object URL when the component unmounts
-      };
-    }
-  }, [JSON.stringify(file)]);
+  const ref = useRef();
 
   const props = {
     name: 'file',
@@ -38,8 +28,7 @@ function UploadDocument({open, setOpen, parentId}) {
     formData.append('file', file)
     if(parentId) formData.append('parent_id', parentId)
     formData.append('type', 'file')
-    const data = await storeDocument(formData)
-    console.log(data);
+    await storeDocument(formData)
   }
 
   return (
@@ -50,26 +39,24 @@ function UploadDocument({open, setOpen, parentId}) {
       onCancel={()=>{
         setOpen(false)
         setFile()
-        setUrl()
+        ref.current.fileList = [];
       }}
-      width={'90vw'}
+      onOk={() => {
+        if(file) {
+          handleStore(file)
+        }
+      }}
+      okText="Store"
+      closable={false}
     >
-      <Dragger {...props} maxCount={1} accept='.pdf' style={{
-          width: '15vw',
+      <Dragger {...props} maxCount={1} style={{
           height: 'fit-content',
           fontSize: '1rem',
           fontWeight: 800,
-          }}>
+      }} ref={ref} showUploadList={ref?.current?.fileList.length > 0 ? true : false} accept={fileType}>
           <p className="ant-upload-drag-icon"><InboxOutlined /></p>
         Chọn File
       </Dragger>
-      {
-        file && url &&
-        <>
-          <PDFViewer url={url}/>
-          <Button onClick={() => {handleStore(file)}} type='primary' style={{fontSize: '1rem', fontWeight: 600, marginTop: '10px'}}>Lưu Tài liệu</Button>
-        </>
-      }
     </Modal>
   )
 }

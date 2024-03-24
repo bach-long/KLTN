@@ -5,26 +5,29 @@ from haystack import Pipeline
 from haystack.utils import print_answers
 import json
 
-custom_query = {"size": 10,
+custom_query = '''{"size": 1,
                 "query": {
                     "bool": {
                         "should": [
                             {"multi_match": {
-                                "query": "${query}",
+                                "query": ${query},
                                 "type": "most_fields",
                                 "fields": ["title", "content"]
                             }
                         }],
-                        "filter": "${filters}"
+                        "filter": ${filters}
                     }
                 },
+                "sort": [
+                    { "_score": { "order": "desc" }},
+                    { "created_at": { "order": "desc" }}
+                ],
                 "collapse": {
                     "field": "link"
-                }}
-
+                }}'''
 retriever = BM25Retriever(document_store=document_store,
                           scale_score=True,
-                          custom_query=json.dumps(custom_query).replace('"${query}"', '${query}').replace('"${filters}"', '${filters}'))
+                          custom_query=custom_query)
 reader = FARMReader(model_name_or_path="deepset/roberta-base-squad2", use_gpu=True, num_processes=1)
 
 querying_pipeline = Pipeline()
@@ -37,6 +40,6 @@ class QA():
         self.filter = filter
 
   def generateAnswer(self):
-      prediction = querying_pipeline.run(query=self.query, params={"filters": self.filter})
-      print_answers(prediction)
+      print(self.filter)
+      prediction = querying_pipeline.run(query=self.query, params={"Retriever": {"filters": self.filter, "top_k": 100}})
       return prediction
