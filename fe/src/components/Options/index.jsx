@@ -1,27 +1,32 @@
-import { FileTwoTone, DeleteTwoTone, StarTwoTone, FolderOpenTwoTone } from '@ant-design/icons'
+import { FileOutlined, DeleteOutlined, StarOutlined, FolderOpenOutlined, StarFilled  } from '@ant-design/icons'
 import { Menu } from 'antd'
+import Info from '../Info'
+import {Typography} from 'antd'
 
-const Options = () => {
+const Options = ({openInfo, setOpenInfo, document}) => {
+  console.log(openInfo)
   const items = [
     {
-     label: <span><FileTwoTone/> Xem chi tiết</span>,
+     label: <Typography.Link onClick={() => {setOpenInfo(true);}}><FileOutlined/> Xem chi tiết</Typography.Link>,
      key: "detail"
     },
     {
-     label: <span><DeleteTwoTone/> Xóa</span>,
+     label: <Typography.Link><DeleteOutlined/> Xóa</Typography.Link>,
      key: "delete"
     },
     {
-     label: <span><StarTwoTone /> Tài liệu quan trọng</span>,
+     label: document.marked ? <Typography.Link><StarFilled /> Hủy đánh dấu</Typography.Link> : <Typography.Link><StarOutlined /> Đánh dấu</Typography.Link>,
      key: "mark"
     },
     {
-     label: <span><FolderOpenTwoTone /> Di chuyển</span>,
+     label: <Typography.Link><FolderOpenOutlined /> Di chuyển</Typography.Link>,
      key: "move"
     },
   ]
   return (
-    <Menu className='options' items={items}/>
+    <div onContextMenu={e => {e.stopPropagation()}} onClick={(e)=>{e.stopPropagation()}} onDoubleClick={(e)=>{e.stopPropagation()}}>
+      <Menu className='options' items={items}/>
+    </div>
   )
 }
 

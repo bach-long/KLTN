@@ -40,7 +40,7 @@ def post_image(image_path, endpoint_url):
         print('Error posting image:', str(e))
 
 # Example usage
-image_path = "./services/thitrantamson_hqb_thg.HN.2013.02/HN.2013.01.2013-03-01.12(1).pdf"
+image_path = "./services/6b1d9b6b-17bd-445b-ba36-c9f7de5fbb1b.jpeg"
 endpoint_url = 'https://lens.google.com/v3/upload'
 
 post_image(image_path, endpoint_url)

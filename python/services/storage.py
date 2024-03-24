@@ -1,5 +1,8 @@
 from google.cloud import storage
 from google.cloud.exceptions import Conflict
+import owncloud
+
+oc = owncloud.Client('http://nextcloud.local.com')
 
 def cors_configuration(bucket_name):
     """Set a bucket's CORS policies configuration."""

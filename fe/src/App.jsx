@@ -7,6 +7,7 @@ import User from './pages/User'
 import HomeLayout from './layouts/HomeLayout';
 import {Worker} from '@react-pdf-viewer/core'
 import Footer from './components/Footer'
+import "react-toastify/dist/ReactToastify.css";
 
 function App() {
   const {authUser} = useContext(AuthContext);
@@ -25,13 +26,12 @@ function App() {
           autoClose={2000}
           newestOnTop={true}
           closeOnClick
-          pauseOnHover={false}
+          pauseOnHover={true}
           pauseOnFocusLoss={false}
-          draggable
           style={{ textAlign: 'left' }}
         />
       </HomeLayout>
-      <Footer/>
+      {/* <Footer/> */}
     </Worker>
   )
 }

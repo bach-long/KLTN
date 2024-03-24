@@ -5,4 +5,18 @@
   font-weight: 600;
   display: flex;
   justify-content:space-around;
+  cursor: pointer;
+  div {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    p {
+      width: 110px;
+      white-space: nowrap;
+      overflow:hidden;
+      text-overflow: ellipsis;
+      font-weight: 600;
+      display: inline-block;
+    }
+  }
 }
