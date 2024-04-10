@@ -7,7 +7,7 @@ function PdfViewer({url}) {
     <PdfViewerComponent
         height='100vh'
         id="container"
-        documentPath={'https://cloud.bachnguyencoder.id.vn/s/B8rHcKsTbfMjkk3/download'}
+        documentPath={url}
         resourceUrl="https://cdn.syncfusion.com/ej2/23.1.40/dist/ej2-pdfviewer-lib"
         style={{ 'height': '640px' }}>
 

@@ -1,25 +1,58 @@
-import { FileOutlined, DeleteOutlined, StarOutlined, FolderOpenOutlined, StarFilled  } from '@ant-design/icons'
+import { FileOutlined, DeleteOutlined, StarOutlined, FolderOpenOutlined, StarFilled, EditOutlined } from '@ant-design/icons'
 import { Menu } from 'antd'
 import Info from '../Info'
 import {Typography} from 'antd'
+import { toggleTrash, updateDocument } from '../../services/documents'
+import {toast} from 'react-toastify'
 
-const Options = ({openInfo, setOpenInfo, document}) => {
-  console.log(openInfo)
+const Options = ({setOpenInfo, setOpenMove, document, setDocument}) => {
+  const handleMark = async () => {
+    try {
+      const setMark = document.marked ? 0 : 1
+      const response = await updateDocument(document.id, {marked: setMark});
+      if(!response.data.success) {
+        throw new Error(response.data.message)
+      }
+      setDocument({...document, marked: setMark})
+    } catch (err) {
+      toast.error(`Có lỗi xảy ra khi đánh dấu tài liệu${err.message}`)
+    }
+  }
+
+  const handleTrash = async () => {
+    try {
+      const type = "delete"
+      const response = await toggleTrash(document.id, {type: type});
+      if(!response.success) {
+        throw new Error(response.message)
+      }
+      setDocument({...document, deleted_at: response.data.deleted_at})
+    } catch (err) {
+      toast.error(`Có lỗi xảy ra khi cập nhật tài liệu${err.message}`)
+    }
+  }
+
   const items = [
     {
-     label: <Typography.Link onClick={() => {setOpenInfo(true);}}><FileOutlined/> Xem chi tiết</Typography.Link>,
+     label: <Typography.Text onClick={() => {setOpenInfo(true);}}><FileOutlined/> Xem chi tiết</Typography.Text>,
      key: "detail"
     },
     {
-     label: <Typography.Link><DeleteOutlined/> Xóa</Typography.Link>,
+      label: <Typography.Text><EditOutlined /> Đổi tên</Typography.Text>,
+      key: "rename"
+    },
+    {
+     label: <Typography.Text onClick={async () => {await handleTrash()}}><DeleteOutlined/> Xóa</Typography.Text>,
      key: "delete"
     },
     {
-     label: document.marked ? <Typography.Link><StarFilled /> Hủy đánh dấu</Typography.Link> : <Typography.Link><StarOutlined /> Đánh dấu</Typography.Link>,
+     label: <Typography.Text onClick={async () => {await handleMark()}}>
+      {document.marked ? <span><StarFilled /> Hủy đánh dấu</span> : <span><StarOutlined /> Đánh dấu</span>}
+     </Typography.Text>,
      key: "mark"
     },
     {
-     label: <Typography.Link><FolderOpenOutlined /> Di chuyển</Typography.Link>,
+     label: <Typography.Text onClick={() => {setOpenMove(true);}}><FolderOpenOutlined /> Di chuyển</Typography.Text>,
      key: "move"
     },
   ]

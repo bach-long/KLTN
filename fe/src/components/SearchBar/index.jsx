@@ -79,9 +79,9 @@ function SearchBar() {
         ) : (
           result.length > 0 && (
             <div id="search-result">
-              <Row gutter={[16, 16]} className="result" style={{ marginLeft: '10%', marginRight: '10%'}}>
+              <Row gutter={[16, 16]} className="result" style={{ marginLeft: '2%', marginRight: '2%'}}>
                 {result.map((document) => (
-                  <Col span={6} key={document.id}>
+                  <Col span={4} key={document.id}>
                     {<Thumbnail file={document.meta}/>}
                   </Col>
                 ))}

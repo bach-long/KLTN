@@ -1,7 +1,7 @@
 from preprocessing import DataLoader
 from qa import QA
 from typing import Optional
-from fastapi import Body, FastAPI, HTTPException, status, Header, File, UploadFile, Depends
+from fastapi import Body, FastAPI, HTTPException, status, Header, File, UploadFile, Depends, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from jose import JWTError, jwt
@@ -9,13 +9,17 @@ from database.config import get_db
 from sqlalchemy.orm import Session
 from database.models import User, Document
 import os.path
-from services.nextCloud import upload_file, getUrl
+from services.nextCloud import upload_file, getUrl, moveFile, delete
 from services.handWrittenRecognization import detect_document;
 from dotenv import load_dotenv;
 import os
 import tensorflow as tf
 from jobs.handleWriteDocument import bulkInsertDocuments
 from sqlalchemy import text
+from elasticsearch import Elasticsearch
+from const.dateTime import mysqlDatetime, elasticsearchDatetime
+
+es = Elasticsearch(["localhost:9200"])
 
 app = FastAPI(debug=True)
 load_dotenv()
@@ -56,7 +60,7 @@ async def search_document(Authorization: str = Header("Authorization"), page: in
       raise credentials_exception
   token = Authorization.split(' ')[1]
   user = await get_current_user(token)
-  search = QA(query, {"author": user['username']})
+  search = QA(query, {"author": user['username'], "_score": {"gt": 0}})
   answer = search.generateAnswer()
   return {"success": 1, "data": answer, "message": "search successfully"}
 
@@ -66,56 +70,64 @@ async def store_document(parent_id = Body(None),
                          folder_name = Body(None),
                          file: UploadFile = File('file'),
                          Authorization: str = Header("Authorization"),
-                         method: str = 'auto',
+                         method = Body('auto'),
                          db: Session = Depends(get_db)):
-  if Authorization is None:
-      raise credentials_exception
-  token = Authorization.split(' ')[1]
-  user = await get_current_user(token)
-
-  if type == 'file':
-    content = file.file.read()
-    print('start upload')
-    upload_file(user['id'], f'{parent_id}_{file.filename}', content)
-    print("upload xong")
-    url = getUrl(f"/Documents/{user['id']}/{parent_id}_{file.filename}")
-    document = Document(
-        name=file.filename,
-        type="file",
-        user_id=user["id"],
-        parent_id=parent_id,
-        url=url
-    )
-    db.add(document)
-    db.commit()
-    db.refresh(document)
-    bulkInsertDocuments.apply_async((file.filename, user, parent_id, method, content, document.id, url), countdown=5)
-    await file.close()
-  elif type == 'folder':
-    data_storage = DataLoader(folder_name, user, parent_id, method)
-    result = await data_storage.addFolderInfo()
-    document = Document(name=folder_name, type="folder", user_id=user["id"], parent_id=parent_id)
-    db.add(document)
-    db.commit()
-    db.refresh(document)
-  return {"success": 1, "message": "create successfully"}
-
-@app.get('/api/documents')
-async def myDocuments(Authorization: str = Header("Authorization"), db: Session = Depends(get_db), parent_id = None, marked = None, deleted = None):
     try:
         if Authorization is None:
             raise credentials_exception
         token = Authorization.split(' ')[1]
         user = await get_current_user(token)
-        print(not parent_id)
+
+        if type == 'file':
+            content = file.file.read()
+            print('start upload')
+            db.begin()
+            upload_file(user['id'], f'{parent_id}_{file.filename}', content)
+            print("upload xong")
+            url = getUrl(f"/Documents/{user['id']}/{parent_id}_{file.filename}")
+            print(method)
+            document = Document(
+                name=file.filename,
+                type="file",
+                user_id=user["id"],
+                parent_id=parent_id,
+                url=url
+            )
+            db.add(document)
+            db.commit()
+            db.refresh(document)
+            bulkInsertDocuments.apply_async((file.filename, user, parent_id, method, content, document.id, url), countdown=5)
+            await file.close()
+        elif type == 'folder':
+            document = Document(name=folder_name, type="folder", user_id=user["id"], parent_id=parent_id, url = None)
+            db.begin()
+            db.add(document)
+            db.commit()
+            db.refresh(document)
+            data_storage = DataLoader(folder_name, user, parent_id, document.id, None, method)
+            result = await data_storage.addFolderInfo()
+        return {"success": 1, "message": "create successfully"}
+    except Exception as e:
+        # Nếu có lỗi, rollback giao dịch
+        db.rollback()
+        print("Error occurred during database transaction:", e)
+
+@app.get('/api/documents')
+async def myDocuments(Authorization: str = Header("Authorization"), db: Session = Depends(get_db), parent_id = None, marked = None, deleted = None):
+    try:
+        print(parent_id)
+        if Authorization is None:
+            raise credentials_exception
+        token = Authorization.split(' ')[1]
+        user = await get_current_user(token)
         documents = None
-        query = db.query(Document).filter(Document.user_id == user['id']).order_by(Document.updated_at.desc())
+        query = db.query(Document).filter(Document.user_id == user['id']).order_by(Document.created_at.desc())
         if parent_id:
             query = query \
-                .filter(Document.parent_id == parent_id)
+                .filter(Document.parent_id == parent_id).filter(Document.deleted_at.is_(None))
         elif not marked and not deleted:
             query = query \
-                .filter(Document.parent_id.is_(None))
+                .filter(Document.parent_id.is_(None)).filter(Document.deleted_at.is_(None))
         if marked and not parent_id:
             query = query.filter(Document.marked)
         if deleted and not parent_id:
@@ -129,6 +141,200 @@ async def myDocuments(Authorization: str = Header("Authorization"), db: Session 
         return {"success": 1, "data": result, "message": "get documents successfully"}
     except Exception as err:
         return {"success": 0, "message": str(err)}
+
+@app.put('/api/documents/{id}')
+async def updateDocument(request: Request, id: int, Authorization: str = Header("Authorization"), db: Session = Depends(get_db)):
+    try:
+        if Authorization is None:
+            raise credentials_exception
+        token = Authorization.split(' ')[1]
+        user = await get_current_user(token)
+        data = await request.json()
+        print(data)
+        db.begin()
+        current =  db.query(Document).filter(Document.id == id).first()
+        oldName = f"{current.parent_id}_{current.name}"
+        newName = None
+        if 'parent_id' in data and current.type == "file":
+            newName = f"{data['parent_id']}_{current.name}"
+        elif 'name' in data:
+            if current.type == "file":
+                newName = f"{current.parent_id}_{data['name']}"
+            data['title'] = data['name']
+        print(newName)
+        if newName:
+            moveFile(user['id'], oldName, newName)
+            url = getUrl(f"/Documents/{user['id']}/{newName}")
+            data['url'] = url
+        data['updated_at'] = elasticsearchDatetime()
+        temp_updated_at = mysqlDatetime()
+        update_query = {
+            "query": {
+                "term": {
+                    "id": id
+                }
+            },
+            "script": {
+                "source": "",
+                "params": {}
+            }
+        }
+        source_script = ""
+        params_script = {}
+        for key, value in data.items():
+            source_script += f"ctx._source['{key}'] = params.{key};"
+            params_script[key] = value
+        update_query["script"]["source"] = source_script
+        update_query["script"]["params"] = params_script
+        es.update_by_query(index="document", body=update_query)
+        data.pop('title', None)
+        data['updated_at'] = temp_updated_at
+        print(data)
+        db.query(Document).filter(Document.id == id).update(data)
+        db.commit()
+        return {"success": 1, "message": "toggle marked successfully"}
+    except Exception as e:
+        # Nếu có lỗi, rollback giao dịch
+        db.rollback()
+        print("Error occurred during database transaction:", e)
+        return {"success": 0, "message": "Error occurred during database transaction"}
+
+@app.put('/api/trash/{id}')
+async def toggleTrash(request: Request, id: int, Authorization: str = Header("Authorization"), db: Session = Depends(get_db)):
+    try:
+        if Authorization is None:
+            raise credentials_exception
+        token = Authorization.split(' ')[1]
+        user = await get_current_user(token)
+        data = await request.json()
+        print(data)
+        db.begin()
+        current =  db.query(Document).filter(Document.id == id).first()
+        recursiveQuery = f"""WITH RECURSIVE child_documents AS (
+                            SELECT *
+                            FROM documents
+                            WHERE parent_id = {id} and type = "folder"
+                            UNION ALL
+                            SELECT f.*
+                            FROM documents f
+                            JOIN child_documents cd ON f.parent_id = cd.id and f.type = "folder"
+                        )
+                        SELECT * FROM child_documents ORDER BY parent_id;"""
+        childFolders = db.execute(recursiveQuery)
+        childFolders = [dict(row)['id'] for row in childFolders]
+        childFolders.append(id)
+        mysql_deleted_at = mysqlDatetime()
+        elastic_deleted_at = elasticsearchDatetime()
+
+        if data["type"] == "delete":
+            data['deleted_at'] = elastic_deleted_at
+        elif data["type"] == "restore":
+            if current.parent and current.parent.deleted_at:
+                data['parent_id'] = None
+                if current.type == "file":
+                    oldName = f"{current.parent_id}_{current.name}"
+                    newName = f"None_{current.name}"
+                    moveFile(user['id'], oldName, newName)
+                    url = getUrl(f"/Documents/{user['id']}/{newName}")
+                    data['url'] = url
+            data['deleted_at'] = None
+        data.pop("type", None)
+        print(data)
+        update_query = {
+            "query": {
+                "bool": {
+                    "should": [
+                        {
+                            "term": {
+                                "id": id
+                            }
+                        },
+                        {
+                            "terms": {
+                                "parent_id": childFolders
+                            }
+                        }
+                    ]
+                }
+            },
+            "script": {
+                "source": "",
+                "params": {}
+            }
+        }
+        source_script = ""
+        params_script = {}
+        for key, value in data.items():
+            source_script += f"ctx._source['{key}'] = params.{key};"
+            params_script[key] = value
+        update_query["script"]["source"] = source_script
+        update_query["script"]["params"] = params_script
+        print(update_query)
+        es.update_by_query(index="document", body=update_query)
+        if data.get("deleted_at"):
+            data['deleted_at'] = mysql_deleted_at
+        db.query(Document).filter(Document.id == id).update(data)
+        db.commit()
+        db.refresh(current)
+        return {"success": 1, "data": current,  "message": "toggle trash successfully"}
+    except Exception as e:
+        # Nếu có lỗi, rollback giao dịch
+        db.rollback()
+        print("Error occurred during database transaction:", e)
+        return {"success": 0, "message": "Error occurred during database transaction"}
+
+@app.delete('/api/delete/{id}')
+async def deleteDocument(id: int, Authorization: str = Header("Authorization"), db: Session = Depends(get_db)):
+    try:
+        if Authorization is None:
+            raise credentials_exception
+        token = Authorization.split(' ')[1]
+        user = await get_current_user(token)
+        db.begin()
+        current =  db.query(Document).filter(Document.id == id).first()
+        recursiveQuery = f"""WITH RECURSIVE child_documents AS (
+                            SELECT *
+                            FROM documents
+                            WHERE parent_id = {id} and type = "folder"
+                            UNION ALL
+                            SELECT f.*
+                            FROM documents f
+                            JOIN child_documents cd ON f.parent_id = cd.id and f.type = "folder"
+                        )
+                        SELECT * FROM child_documents ORDER BY parent_id;"""
+        childFolders = db.execute(recursiveQuery)
+        childFolders = [dict(row)['id'] for row in childFolders]
+        childFolders.append(id)
+        name = f"{current.parent_id}_{current.name}"
+        if current.type == "file":
+            delete(user['id'], name)
+        delete_query = {
+            "query": {
+                "bool": {
+                    "should": [
+                        {
+                            "term": {
+                                "id": id
+                            }
+                        },
+                        {
+                            "terms": {
+                                "parent_id": childFolders
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+        es.delete_by_query(index="document", body=delete_query)
+        db.query(Document).filter(Document.id == id).delete()
+        db.commit()
+        return {"success": 1, "message": "delete successfully"}
+    except Exception as e:
+        # Nếu có lỗi, rollback giao dịch
+        db.rollback()
+        print("Error occurred during database transaction:", e)
+        return {"success": 0, "message": "Error occurred during database transaction"}
 
 @app.get('/api/documents/{id}')
 async def getMetadata(id: int, Authorization: str = Header("Authorization"), db: Session = Depends(get_db)):
@@ -151,5 +357,75 @@ async def getMetadata(id: int, Authorization: str = Header("Authorization"), db:
         documents = [dict(row) for row in result]
         print(documents)
         return {"success": 1, "data": documents, "message": "get documents successfully"}
+    except Exception as err:
+        return {"success": 0, "message": str(err)}
+
+@app.get('/api/content/{id}')
+async def getMetadata(id: int, Authorization: str = Header("Authorization"), db: Session = Depends(get_db)):
+    try:
+        if Authorization is None:
+            raise credentials_exception
+        token = Authorization.split(' ')[1]
+        user = await get_current_user(token)
+        document = db.query(Document).filter(Document.id == id).first()
+        return {"success": 1, "data": document, "message": "get documents successfully"}
+    except Exception as err:
+        return {"success": 0, "message": str(err)}
+
+@app.get('/api/move')
+async def moveMenu(Authorization: str = Header("Authorization"), db: Session = Depends(get_db), parent_id = None):
+    try:
+        if Authorization is None:
+            raise credentials_exception
+        token = Authorization.split(' ')[1]
+        user = await get_current_user(token)
+        documents = None
+        parentFolder = None
+        query = db.query(Document).filter(Document.type == "folder").order_by(Document.created_at.desc())
+        if parent_id:
+            documents = query.filter(Document.parent_id == parent_id).all()
+            parentFolder = query.filter(Document.id == parent_id).first()
+        else:
+            print("deo co")
+            documents = query.filter(Document.parent_id.is_(None)).all()
+            parentFolder = None
+        return {"success": 1, "data": {"documents": documents, "parentFolder": parentFolder}, "message": "get documents successfully"}
+    except Exception as err:
+        return {"success": 0, "message": str(err)}
+
+@app.post('/api/save/{id}')
+async def store_document(id: int,
+                         file: UploadFile = File('file'),
+                         Authorization: str = Header("Authorization"),
+                         method: str = 'auto',
+                         db: Session = Depends(get_db)):
+    try:
+        if Authorization is None:
+                raise credentials_exception
+        token = Authorization.split(' ')[1]
+        user = await get_current_user(token)
+        content = file.file.read()
+        print(file.content_type)
+        current =  db.query(Document).filter(Document.id == id).first()
+        print(current.parent_id)
+        check = upload_file(user['id'], f'{current.parent_id}_{file.filename}', content)
+        if not check:
+            raise Exception("Tải file thất bại")
+        delete_query = {
+            "query": {
+                "bool": {
+                    "must": [
+                        {
+                            "term": {
+                                "id": id
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+        es.delete_by_query(index="document", body=delete_query)
+        bulkInsertDocuments.apply_async((file.filename, user, current.parent_id, method, content, id, current.url), countdown=5)
+        return {"success": 1,  "message": "save documents successfully"}
     except Exception as err:
         return {"success": 0, "message": str(err)}

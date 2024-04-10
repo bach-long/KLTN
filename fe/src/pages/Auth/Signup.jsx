@@ -14,7 +14,6 @@ function Signup() {
     try {
       setLoading(true);
       const data = await signup(values);
-      console.log(data);
       navigate('/auth/login');
     } catch (err) {
       console.error('Error fetching data:', err);

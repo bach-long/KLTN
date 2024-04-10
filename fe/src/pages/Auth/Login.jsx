@@ -16,9 +16,7 @@ function Login() {
   const onFinish = async (values) => {
     try {
       setLoading(true);
-      console.log(values)
       const data = await login(values);
-      console.log(data);
       localStorage.setItem("accessToken", data.data.token)
       localStorage.setItem('authUser', JSON.stringify(data.data.user))
       setAuthUser(data.data.user)

@@ -7,11 +7,9 @@ function AddFolderModal({open, setOpen, parentId}) {
   const [form] = Form.useForm()
 
   const handleAddFolder = async () => {
-    console.log({parent_id: parentId, folder_name: form.getFieldValue('folderName'), type: 'folder'});
     const formData = new FormData()
     formData.append('type', 'folder')
     if(parentId) formData.append('parent_id', parentId)
-    console.log(parentId);
     formData.append('folder_name', form.getFieldValue('folderName'))
     const data = await storeDocument(formData)
   }

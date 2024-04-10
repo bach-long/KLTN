@@ -12,7 +12,7 @@ custom_query = '''{"size": 1,
                             {"multi_match": {
                                 "query": ${query},
                                 "type": "most_fields",
-                                "fields": ["title", "content"]
+                                "fields": ["content", "title"]
                             }
                         }],
                         "filter": ${filters}

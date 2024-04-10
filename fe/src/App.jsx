@@ -6,20 +6,13 @@ import { useContext } from 'react'
 import User from './pages/User'
 import HomeLayout from './layouts/HomeLayout';
 import {Worker} from '@react-pdf-viewer/core'
-import Footer from './components/Footer'
 import "react-toastify/dist/ReactToastify.css";
 
 function App() {
   const {authUser} = useContext(AuthContext);
 
-  const items = [
-    {name: 'Home', path: '/'},
-    {name: 'Cá nhân', path: '/me'},
-  ]
-
   return (
     <Worker workerUrl='https://unpkg.com/pdfjs-dist@3.4.120/build/pdf.worker.min.js'>
-      <HomeLayout items={items}>
         {authUser ? <User/> : <Guest/>}
         <ToastContainer
           position="top-right"
@@ -30,7 +23,6 @@ function App() {
           pauseOnFocusLoss={false}
           style={{ textAlign: 'left' }}
         />
-      </HomeLayout>
       {/* <Footer/> */}
     </Worker>
   )

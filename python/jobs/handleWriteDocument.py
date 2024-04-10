@@ -1,6 +1,7 @@
 from celery import Celery
 from preprocessing import DataLoader
 import os
+import shutil
 
 app = Celery('jobs', broker='redis://localhost:6379/0', include=['jobs.handleWriteDocument'])
 
@@ -16,4 +17,5 @@ def bulkInsertDocuments(filename, user, parent_id, method, content, id, url):
     dataStorage = DataLoader(filename, user, parent_id, id, url, method)
     dataStorage.storeDocument()
   finally:
-    os.remove(destination_path)
+    print("done")
+    shutil.rmtree(path)
