@@ -1,20 +1,21 @@
-import pageThumbnailPlugin from './pageThumbnailPlugin';
-import { thumbnailPlugin } from '@react-pdf-viewer/thumbnail';
-import PropTypes from 'prop-types';
-import { Viewer } from '@react-pdf-viewer/core';
 import { Popover } from 'antd';
 import './thumbnail.scss'
 import { FilePdfTwoTone, FilePptTwoTone, FileWordTwoTone, FileExcelTwoTone, FolderTwoTone } from '@ant-design/icons'
 import Options from '../Options';
 import { useState } from 'react';
 import Info from '../Info';
+import MovingMenu from '../MovingMenu';
+import TrashOptions from '../TrashOptions';
+import { Link } from 'react-router-dom';
 
 const Thumbnail = ({file}) => {
   // const thumbnailPluginInstance = thumbnailPlugin();
   // const { Cover } = thumbnailPluginInstance;
 
   const [openInfo, setOpenInfo] = useState(false);
-  const {url, name, id} = file;
+  const [openMove, setOpenMove] = useState(false);
+  const [document, setDocument] = useState(file)
+  const {url, name, id, title} = document
   // const pageThumbnailPluginInstance = pageThumbnailPlugin({
   //     PageThumbnail: <Cover getPageIndex={() => 0} width={250} />,
   // });
@@ -22,7 +23,7 @@ const Thumbnail = ({file}) => {
 
   let thumbnail = <FolderTwoTone style = {style}/>
 
-  const type = name.split('.').pop();
+  const type = name ? name.split('.').pop() : title.split('.').pop();
   if (type === 'pdf') {
     thumbnail = <FilePdfTwoTone style = {style}/>
   } else if (type === 'ppt' || type === 'pptx' ) {
@@ -32,26 +33,27 @@ const Thumbnail = ({file}) => {
   } else if (type === 'xlsx' || type === 'xls') {
     thumbnail = <FileExcelTwoTone style = {style}/>
   }
-
   return (
-    <div className='thumbnail'>
+    <Link className='thumbnail' to={document.deleted_at ? '#' : `/document/${document.id}`} target='_blank' rel="noopener noreferrer" >
       <div onContextMenu={e => {e.stopPropagation()}} onClick={(e)=>{e.stopPropagation()}}>
         <div onContextMenu={e => {e.stopPropagation()}} onClick={(e)=>{e.stopPropagation()}} onDoubleClick={(e)=>{e.stopPropagation()}}>
           <Info open={openInfo} setOpen={setOpenInfo} id={id} url={url}/>
+          <MovingMenu open={openMove} setOpen={setOpenMove} parentId={document.parent_id} id={document.id}/>
         </div>
         <Popover
           overlayInnerStyle={{padding: "0%"}}
           className='item' placement='rightTop'
-          content={<Options openInfo={openInfo} setOpenInfo={setOpenInfo} document={file}/>}
+          content={file.deleted_at ? <TrashOptions openInfo={openInfo} setOpenInfo={setOpenInfo} openMove={openMove} setOpenMove={setOpenMove} document={document} setDocument={setDocument}/> :
+          <Options openInfo={openInfo} setOpenInfo={setOpenInfo} openMove={openMove} setOpenMove={setOpenMove} document={document} setDocument={setDocument}/>}
           style={{cursor: "pointer"}} trigger={['contextMenu']}
-          zIndex={20}
+          zIndex={100}
         >
           {/* <Viewer fileUrl={url} plugins={[pageThumbnailPluginInstance, thumbnailPluginInstance]}/> */}
           {thumbnail}
-          <p>{name}</p>
+          <p>{name ?? title}</p>
         </Popover>
       </div>
-    </div>)
+    </Link>)
 }
 
 // Thumbnail.propTypes = {

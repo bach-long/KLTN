@@ -6,7 +6,6 @@ import '@react-pdf-viewer/core/lib/styles/index.css'
 import './index.scss'
 
 function PDFViewer({url}) {
-  console.log(url)
   const defaultLayoutPluginInstance = defaultLayoutPlugin();
   return (
     <div className='pdf-container'>

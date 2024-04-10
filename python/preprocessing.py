@@ -1,10 +1,11 @@
 from haystack.nodes import PDFToTextConverter, PreProcessor, TikaConverter, TextConverter
 from haystack.document_stores import ElasticsearchDocumentStore
-from datetime import datetime
 from pathlib import Path
 import requests
 from tika import parser
 from services.nextCloud import getUrl
+from const.dateTime import elasticsearchDatetime
+from services.googleLens import post_image
 import json
 # converter = ImageToTextConverter(remove_numeric_tables=True, valid_languages=["eng"])
 # ocr = converter.convert(file_path="data/image_ocr.png", meta=None)[0]
@@ -12,6 +13,7 @@ import json
 
 tika_server_url = 'http://localhost:9998/tika'
 document_store = ElasticsearchDocumentStore(host="localhost", port=9200, index="document")
+endpoint_url = 'https://lens.google.com/v3/upload'
 
 class DataLoader():
   def __init__(self, name, user, parent_id, id, url, method = 'auto'):
@@ -28,19 +30,21 @@ class DataLoader():
         ocr_option = 'full'
     elif self.method == 'auto':
         ocr_option = 'auto'
-    current_time = datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+    current_time = elasticsearchDatetime()
     file_path = f"./static/{self.user['id']}/{self.name}"
-    parsed = parser.from_file(file_path)
-    path = f"/Documents/{self.user['id']}/{self.parent_id}_{self.name}"
+    print(file_path)
+    print(self.method)
+    parsed = post_image(file_path, endpoint_url) if self.method == "handWriten" else parser.from_file(file_path)
     document = {"content": parsed['content'],
                 "meta": {
-                    "link": self.url,
+                    "url": self.url,
                     "id": self.id,
                     "parent_id": self.parent_id,
                     "marked": 0,
                     "title": self.name,
                     "created_at": current_time, "updated_at": current_time,
-                    "author": self.user['username']
+                    "author": self.user['username'],
+                    "deleted_at": None
                 }}
     print(parsed['content'])
     return document
@@ -69,16 +73,17 @@ class DataLoader():
     return documents
 
   async def addFolderInfo(self):
-      current_time = datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+      current_time = elasticsearchDatetime()
       document_store.write_documents([{
           'content': self.name,
           'meta': {
-            "link": None,
+            "url": None,
             "id": self.id,
             "parent_id": self.parent_id,
             "marked": 0,
             "title": self.name,
             "created_at": current_time, "updated_at": current_time,
-            "author": self.user['username']
+            "author": self.user['username'],
+            "deleted_at": None
           }
       }])

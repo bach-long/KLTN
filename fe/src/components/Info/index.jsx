@@ -14,9 +14,9 @@ function Info({open, setOpen, id, url}) {
       if (contentLength) {
         const sizeInBytes = parseInt(contentLength, 10);
         // Chuyển đổi kích thước từ byte sang kilobyte hoặc megabyte nếu cần
-        const sizeInKB = Math.round(sizeInBytes / 1024);
-        const sizeInMB = Math.round(sizeInKB / 1024);
-        return { bytes: sizeInBytes, kilobytes: sizeInKB, megabytes: sizeInMB };
+        const sizeInKB = sizeInBytes / 1024;
+        const sizeInMB = sizeInKB / 1024;
+        return { bytes: sizeInBytes.toFixed(2), kilobytes: sizeInKB.toFixed(2), megabytes: sizeInMB.toFixed(2) };
       } else {
         throw new Error('Không thể lấy kích thước tệp tin từ URL.');
       }
@@ -40,7 +40,6 @@ function Info({open, setOpen, id, url}) {
           updatedAt: moment(lastItem.updated_at).format('YYYY-MM-DD HH:mm:ss'),
           size: size,
         }
-        console.log(extractInfo)
         setInfo(extractInfo)
       }
       fetchInfo();

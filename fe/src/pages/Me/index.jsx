@@ -58,10 +58,6 @@ function Me() {
       key: 'upload file powerpoint'
     },
     {
-      label: <span><FolderAddOutlined /> Tải folder</span>,
-      key: 'upload folder'
-    },
-    {
       label: <span onClick={handleOpenFolderModal}>Create folder</span>,
       key: 'create folder'
     }
@@ -118,8 +114,8 @@ function Me() {
           <Breadcrumb style={{marginBottom: 50}} items={breadcrum}/>
           <SearchBar loading={loading} setLoading={setLoading} setDocuments={setDocuments} documents={documents}/>
           <div className='folders'>
-            <h3>Folders</h3>
-            <Row gutter={[16, 16]} className="documents" style={{ marginLeft: '10%', marginRight: '10%'}}>
+            <h2>Folders</h2>
+            <Row gutter={[16, 16]} className="result">
               {documents?.folders.map((folder) => (
                 <Col span={4} key={folder.id}>
                   <div onDoubleClick={()=>{
@@ -132,11 +128,11 @@ function Me() {
             </Row>
           </div>
           <div className='files'>
-          <h3>Files</h3>
-          `<Row gutter={[16, 16]} className="result" style={{ marginLeft: '10%', marginRight: '10%'}}>
+          <h2>Files</h2>
+          <Row gutter={[16, 16]} className="result">
               {documents?.files.map((document) => (
                 <Col span={4} key={document.id}>
-                  <div onDoubleClick={() => {navigate(`/document/${document.name}`, {state: {url: document.url}})}}>
+                  <div>
                   {<Thumbnail file={document}/>}
                   </div>
                 </Col>
