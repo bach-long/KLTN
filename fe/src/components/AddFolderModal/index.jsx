@@ -1,17 +1,31 @@
 import { Input, Modal } from 'antd'
-import React from 'react'
+import React, { useState } from 'react'
 import { Form } from 'antd'
 import { storeDocument } from '../../services/documents'
+import { toast } from 'react-toastify'
 
-function AddFolderModal({open, setOpen, parentId}) {
+function AddFolderModal({open, setOpen, parentId, setRefresh}) {
   const [form] = Form.useForm()
 
   const handleAddFolder = async () => {
-    const formData = new FormData()
-    formData.append('type', 'folder')
-    if(parentId) formData.append('parent_id', parentId)
-    formData.append('folder_name', form.getFieldValue('folderName'))
-    const data = await storeDocument(formData)
+    try {
+      const formData = new FormData()
+      formData.append('type', 'folder')
+      if(parentId) formData.append('parent_id', parentId)
+      formData.append('folder_name', form.getFieldValue('folderName'))
+      const response = await storeDocument(formData);
+      if (response.success) {
+        setRefresh(prev => {return -1 * prev});
+        toast.success("Tạo thành công");
+        setOpen(false)
+      } else {
+        throw new Error("Khởi tạo tài liệu thất bại")
+      }
+    } catch (err) {
+      toast.error(err.message)
+    } finally {
+      form.resetFields(['folderName']);
+    }
   }
 
   return (

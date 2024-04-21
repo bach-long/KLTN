@@ -1,16 +1,18 @@
 import { useEffect, useRef, useState } from 'react'
 import { InboxOutlined } from '@ant-design/icons';
-import { Upload, Button, Modal, Select } from 'antd';
+import { Upload, Button, Modal, Select, Spin } from 'antd';
 import './index.scss'
 import PDFViewer from '../../components/PDFViewer';
 import { storeDocument } from '../../services/documents';
+import { toast } from 'react-toastify';
+import { LoadingOutlined } from '@ant-design/icons';
 
 const { Dragger } = Upload;
 
-function UploadDocument({open, setOpen, parentId, fileType}) {
-  console.log(fileType)
+function UploadDocument({open, setOpen, parentId, fileType, setRefresh}) {
   const [file, setFile] = useState();
   const [method, setMethod] = useState('auto');
+  const [loading, setLoading] = useState(false);
   const ref = useRef();
 
   const props = {
@@ -28,14 +30,34 @@ function UploadDocument({open, setOpen, parentId, fileType}) {
     fileList: file ? [file] : []
   };
 
+  const reset = () => {
+    setOpen(false)
+    setMethod("auto")
+    setFile()
+    ref.current.fileList = [];
+  }
+
   const handleStore = async (file) => {
-    const formData = new FormData()
-    console.log(file)
-    formData.append('file', file)
-    if(parentId) formData.append('parent_id', parentId)
-    formData.append('type', 'file')
-    formData.append('method', method)
-    await storeDocument(formData)
+    try {
+      const formData = new FormData()
+      console.log(file)
+      formData.append('file', file)
+      if(parentId) formData.append('parent_id', parentId)
+      formData.append('type', 'file')
+      formData.append('method', method)
+      setLoading(true);
+      const response = await storeDocument(formData)
+      if (response.success) {
+        setLoading(false);
+        setRefresh(prev => {return -1 * prev});
+        toast.success("Tạo thành công");
+        reset();
+      } else {
+        throw new Error("Khởi tạo tài liệu thất bại")
+      }
+    } catch (err) {
+      toast.error(err.message)
+    }
   }
 
   return (
@@ -45,16 +67,15 @@ function UploadDocument({open, setOpen, parentId, fileType}) {
       open={open}
       onCancel={()=>{
         console.log("close")
-        setOpen(false)
-        setMethod("auto")
-        setFile()
-        ref.current.fileList = [];
+        reset();
       }}
       onOk={() => {
         if(file) {
           handleStore(file)
         }
       }}
+      okButtonProps={{disabled: loading ? true : false}}
+      cancelButtonProps={{disabled: loading ? true : false}}
       okText="Store"
       closable={false}
     >
@@ -92,7 +113,18 @@ function UploadDocument({open, setOpen, parentId, fileType}) {
           fontWeight: 800,
       }} ref={ref} accept={fileType}>
           <p className="ant-upload-drag-icon"><InboxOutlined /></p>
-        Chọn File
+        {loading ?
+        <Spin
+          indicator={
+            <LoadingOutlined
+              style={{
+                fontSize: 24,
+              }}
+              spin
+            />
+          }
+        /> :
+        <span>Chọn File</span>}
       </Dragger>
     </Modal>
   )

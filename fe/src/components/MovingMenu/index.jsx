@@ -5,7 +5,7 @@ import { getMovingMenu, updateDocument } from '../../services/documents';
 import { toast } from 'react-toastify';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 
-function MovingMenu({open, setOpen, parentId, id, type}) {
+function MovingMenu({open, setOpen, parentId, id, document, setCurrentDocuments}) {
   const [documents, setDocuments] = useState([]);
   const [parentFolder, setParentFolder] = useState();
   const [folderId, setFolderId] = useState(parentId);
@@ -39,6 +39,14 @@ function MovingMenu({open, setOpen, parentId, id, type}) {
       const result = await updateDocument(id, data)
       if (result.success === 0) {
         throw new Error(data.message);
+      } else {
+        toast.success("Đã di chuyển tài liệu");
+        setCurrentDocuments((prev) => {
+          return {
+            folders: document.type === "folder" ? prev.folders.filter(element => {return element.id != document.id}) : [...prev.folders],
+            files: document.type === "file" ? prev.files.filter(element => {return element.id != document.id}) : [...prev.files]
+          }
+        });
       }
     } catch (err) {
       toast.error(err.message)
@@ -63,7 +71,7 @@ function MovingMenu({open, setOpen, parentId, id, type}) {
       zIndex={100}
     >
       <div className="modal-content">
-        <h2>Vị trí hiện tại: <Button onClick={() => {setFolderId(current.id)}}><FolderFilled /> {current ? current.name : "Tài liệu của tôi"}</Button></h2>
+        <h2>Vị trí hiện tại: <Button onClick={() => {setFolderId(current ? current.id : null)}}><FolderFilled /> {current ? current.name : "Tài liệu của tôi"}</Button></h2>
         <h3><ArrowLeftOutlined onClick={() => { if(parentFolder) {setFolderId(parentFolder.parent_id)} }}/> {parentFolder ? parentFolder.name : ' Tài liệu của tôi'}</h3>
         <hr className="modal-divider" /> {/* Đường kẻ ngang */}
         <div className="content-section">

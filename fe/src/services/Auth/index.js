@@ -12,3 +12,7 @@ export const login = (data) => {
 export const me = () => {
   return instance.get('/auth/me');
 };
+
+export const getUserByToken= (token) => {
+  return instance.get(`/auth/token/${token}`);
+}

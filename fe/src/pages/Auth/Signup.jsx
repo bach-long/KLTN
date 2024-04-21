@@ -4,6 +4,7 @@ import './signup.scss'
 import { Link, useNavigate } from 'react-router-dom';
 import { signup } from '../../services/Auth';
 import SpinLoading from '../../components/Loading/SpinLoading';
+import { toast } from "react-toastify";
 
 function Signup() {
   const [loading, setLoading] = useState(false);
@@ -14,8 +15,14 @@ function Signup() {
     try {
       setLoading(true);
       const data = await signup(values);
-      navigate('/auth/login');
+      if (data.success) {
+        toast.success("Đăng ký thành công")
+        navigate('/auth/login');
+      } else {
+        throw new Error("Đăng nhập thất bại")
+      }
     } catch (err) {
+      toast.error("Đăng ký thất bại")
       console.error('Error fetching data:', err);
     } finally {
       setLoading(false);

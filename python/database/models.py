@@ -12,7 +12,9 @@ class User(Base):
     email = Column(String(255), unique=True, index=True)
     password = Column(String(255))
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
-
+    active_token = Column(String(255))
+    active_sent_at = Column(TIMESTAMP(timezone=True))
+    activated_at = Column(TIMESTAMP(timezone=True))
     updated_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now())
 
     documents = relationship("Document", back_populates="user")
@@ -29,12 +31,8 @@ class Document(Base):
     marked = Column(Boolean, default=False)
     opened_at = Column(TIMESTAMP)
     deleted_at = Column(TIMESTAMP)
-
-
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
-
     updated_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now())
-
     user = relationship("User", back_populates="documents")
     children = relationship("Document", back_populates="parent", lazy="dynamic")
     parent = relationship("Document", back_populates="children", remote_side=[id])

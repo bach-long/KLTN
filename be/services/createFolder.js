@@ -1,24 +1,28 @@
-const { Storage } = require('@google-cloud/storage');
-const storage = new Storage();
+const axios = require('axios');
 
-async function createFolder(bucketName, folderName) {
+// Khởi tạo các thông tin cần thiết
+const nextcloudUrl = 'https://cloud.bachnguyencoder.id.vn/';
+const username = 'kltn1912';
+const password = 'bach19122002';
+
+async function createFolder(userId) {
   try {
-    // Kiểm tra xem thư mục đã tồn tại chưa
-    const [exists] = await storage.bucket(bucketName).file(folderName).exists();
+    // Xác thực và tạo thư mục
+    const response = await axios({
+      method: 'MKCOL',
+      url: `${nextcloudUrl}/remote.php/dav/files/${username}/Documents/${userId}`,
+      auth: {
+        username: username,
+        password: password
+      }
+    });
 
-    if (!exists) {
-      // Nếu thư mục chưa tồn tại, tạo mới
-      await storage.bucket(bucketName).file(folderName).save('', { metadata: { contentType: 'application/x-www-form-urlencoded' } });
-
-      console.log(`Folder ${folderName} created successfully in ${bucketName}.`);
-    } else {
-      console.log(`Folder ${folderName} already exists in ${bucketName}.`);
-      throw new Error('Folder đã tồn tại')
-    }
+    console.log('Thư mục đã được tạo:', response.status);
+    return response.status === 201;
   } catch (error) {
-    throw error
+    console.error('Lỗi khi tạo thư mục:', error.response.status);
+    return false;
   }
 }
 
-
-module.exports = createFolder;
+module.exports = createFolder

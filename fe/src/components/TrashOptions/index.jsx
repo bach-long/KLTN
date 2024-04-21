@@ -4,13 +4,20 @@ import { Menu, Typography } from 'antd';
 import { permanentDelete, toggleTrash } from '../../services/documents';
 import { toast } from 'react-toastify';
 
-function TrashOptions({setOpenInfo, setOpenMove, document, setDocument}) {
+function TrashOptions({document, setDocuments}) {
   const handleTrash = async () => {
     try {
       const type = "restore";
       const response = await toggleTrash(document.id, {type: type});
       if(!response.success) {
         throw new Error(response.message)
+      } else {
+        setDocuments((prev) => {
+          return {
+            folders: document.type === "folder" ? prev.folders.filter(element => {return element.id != document.id}) : [...prev.folders],
+            files: document.type === "file" ? prev.files.filter(element => {return element.id != document.id}) : [...prev.files]
+          }
+        });
       }
     } catch (err) {
       toast.error(`Có lỗi xảy ra khi cập nhật tài liệu${err.message}`)
@@ -22,6 +29,13 @@ function TrashOptions({setOpenInfo, setOpenMove, document, setDocument}) {
       const response = await permanentDelete(document.id);
       if(!response.success) {
         throw new Error(response.message)
+      } else {
+        setDocuments((prev) => {
+          return {
+            folders: document.type === "folder" ? prev.folders.filter(element => {return element.id != document.id}) : [...prev.folders],
+            files: document.type === "file" ? prev.files.filter(element => {return element.id != document.id}) : [...prev.files]
+          }
+        });
       }
     } catch (err) {
       toast.error(`Có lỗi xảy ra khi cập nhật tài liệu${err.message}`)

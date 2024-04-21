@@ -8,13 +8,14 @@ import MovingMenu from '../MovingMenu';
 import TrashOptions from '../TrashOptions';
 import { Link } from 'react-router-dom';
 
-const Thumbnail = ({file}) => {
+const Thumbnail = ({file, setDocuments}) => {
   // const thumbnailPluginInstance = thumbnailPlugin();
   // const { Cover } = thumbnailPluginInstance;
 
   const [openInfo, setOpenInfo] = useState(false);
   const [openMove, setOpenMove] = useState(false);
   const [document, setDocument] = useState(file)
+  console.log(document)
   const {url, name, id, title} = document
   // const pageThumbnailPluginInstance = pageThumbnailPlugin({
   //     PageThumbnail: <Cover getPageIndex={() => 0} width={250} />,
@@ -38,13 +39,13 @@ const Thumbnail = ({file}) => {
       <div onContextMenu={e => {e.stopPropagation()}} onClick={(e)=>{e.stopPropagation()}}>
         <div onContextMenu={e => {e.stopPropagation()}} onClick={(e)=>{e.stopPropagation()}} onDoubleClick={(e)=>{e.stopPropagation()}}>
           <Info open={openInfo} setOpen={setOpenInfo} id={id} url={url}/>
-          <MovingMenu open={openMove} setOpen={setOpenMove} parentId={document.parent_id} id={document.id}/>
+          <MovingMenu open={openMove} setOpen={setOpenMove} parentId={document.parent_id} id={document.id} document={document} setCurrentDocuments={setDocuments}/>
         </div>
         <Popover
           overlayInnerStyle={{padding: "0%"}}
           className='item' placement='rightTop'
-          content={file.deleted_at ? <TrashOptions openInfo={openInfo} setOpenInfo={setOpenInfo} openMove={openMove} setOpenMove={setOpenMove} document={document} setDocument={setDocument}/> :
-          <Options openInfo={openInfo} setOpenInfo={setOpenInfo} openMove={openMove} setOpenMove={setOpenMove} document={document} setDocument={setDocument}/>}
+          content={file.deleted_at ? <TrashOptions document={document} setDocument={setDocument} setDocuments={setDocuments}/> :
+          <Options setOpenInfo={setOpenInfo} setOpenMove={setOpenMove} document={document} setDocument={setDocument} setDocuments={setDocuments}/>}
           style={{cursor: "pointer"}} trigger={['contextMenu']}
           zIndex={100}
         >

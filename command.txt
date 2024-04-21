@@ -1,1 +1,3 @@
 celery -A jobs.handleWriteDocument worker --loglevel=info -P threads
+alembic revision --autogenerate -m "Migration message"
+alembic upgrade head

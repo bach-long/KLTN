@@ -3,6 +3,8 @@ import { Route, Routes } from 'react-router-dom'
 import Home from '../../components/SearchBar'
 import Auth from '../Auth'
 import HomeLayout from '../../layouts/HomeLayout'
+import Login from '../Auth/Login'
+import Active from '../Active'
 
 function Guest() {
   const items = [
@@ -10,12 +12,13 @@ function Guest() {
   ]
 
   return (
-    <HomeLayout items={items}>
+    <>
       <Routes>
+          <Route path="/" element={<Login/>}/>
           <Route path="/auth/*" element={<Auth/>}/>
-          <Route path="*" element={<Auth/>}/>
+          <Route path="/active/:token" element={<Active/>}/>
       </Routes>
-    </HomeLayout>
+    </>
   )
 }
 

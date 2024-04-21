@@ -17,6 +17,8 @@ body, html {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  user-select: none;
+  -webkit-user-select: none;
   line-height: 1.5;
   font-weight: 400;
   font-size: 16px;

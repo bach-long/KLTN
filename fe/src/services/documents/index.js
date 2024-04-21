@@ -1,7 +1,8 @@
 import {instancePython} from '../../config/axios'
 
-export const myDocuments = (parentId = null, marked = null, deleted = null) => {
-  return instancePython.get(`/api/documents?parent_id=${parentId ?? ''}&marked=${marked ?? ''}&deleted=${deleted ?? ''}`);
+export const myDocuments = (parentId = null, marked = null, deleted = null, type = null, start = null, end = null) => {
+  return instancePython
+  .get(`/api/documents?parent_id=${parentId ?? ''}&marked=${marked ?? ''}&deleted=${deleted ?? ''}&type=${type ?? ''}&start=${start ?? ''}&end=${end ?? ''}`);
 };
 
 export const storeDocument = (data) => {
