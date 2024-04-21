@@ -7,6 +7,8 @@ import {toast} from 'react-toastify'
 import Thumbnail from '../PDFViewer/Thumbnail';
 import { AuthContext } from '../../providers/AuthProvider'
 import { SearchOutlined } from '@ant-design/icons';
+import TypeSelector from '../TypeSelector';
+import DateSelector from '../DateSelector';
 const { Search } = Input;
 const { Title } = Typography
 
@@ -17,9 +19,12 @@ function SearchBar() {
   const [loading, setLoading] = useState(false);
   const {authUser} = useContext(AuthContext);
   const [openSearch, setOpenSearch] = useState(false);
+  const [date, setDate] = useState()
+  const [type, setType] = useState();
 
   const handleSearchClick = async (query) => {
-    const check = await handleSearch(page, perPage, query, {filter: {title: ''}});
+    const check = await handleSearch(page, perPage, query, {filter: {title: ''}, type: type,
+      start: date && date.dateString[0] ? date.dateString[0] : null, end: date && date.dateString[1] ? date.dateString[1] : null});
     if (check) {
       if (!openSearch) {
         setOpenSearch(true);
@@ -56,6 +61,9 @@ function SearchBar() {
         open={openSearch}
         onCancel={()=>{
           setOpenSearch(false);
+          setType();
+          setDate();
+          setResult([]);
         }}
         width={"90vw"}
         footer={null}
@@ -72,6 +80,8 @@ function SearchBar() {
               size="large"
               disabled={loading ? true : false}
             />
+            <TypeSelector type={type} setType={setType}/>
+            <DateSelector date={date} setDate={setDate}/>
           </Col>
         </Row>
         {loading ? ( // Render a loading LoadingOutlinedner when loading is true
@@ -82,7 +92,7 @@ function SearchBar() {
               <Row gutter={[16, 16]} className="result" style={{ marginLeft: '2%', marginRight: '2%'}}>
                 {result.map((document) => (
                   <Col span={4} key={document.id}>
-                    {<Thumbnail file={document.meta}/>}
+                    {<Thumbnail file={document}/>}
                   </Col>
                 ))}
               </Row>

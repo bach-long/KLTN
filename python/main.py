@@ -15,9 +15,10 @@ from dotenv import load_dotenv;
 import os
 import tensorflow as tf
 from jobs.handleWriteDocument import bulkInsertDocuments
-from sqlalchemy import text
+from sqlalchemy import or_, text
 from elasticsearch import Elasticsearch
 from const.dateTime import mysqlDatetime, elasticsearchDatetime
+from const.customQuery import generateCustomQuery
 
 es = Elasticsearch(["localhost:9200"])
 
@@ -55,14 +56,41 @@ async def get_current_user(token):
 
 
 @app.get('/api/search')
-async def search_document(Authorization: str = Header("Authorization"), page: int = 1, per_page: int = 20, query: str = '', filter: dict = {}):
+async def search_document(Authorization: str = Header("Authorization"),
+                          page: int = 1,
+                          per_page: int = 20,
+                          query: str = '',
+                          filter: dict = {},
+                          type : int = None,
+                          start: str = None,
+                          end: str = None):
   if Authorization is None:
       raise credentials_exception
   token = Authorization.split(' ')[1]
   user = await get_current_user(token)
-  search = QA(query, {"author": user['username'], "_score": {"gt": 0}})
-  answer = search.generateAnswer()
-  return {"success": 1, "data": answer, "message": "search successfully"}
+  print(filter, type, start, end)
+  filters = None
+  if start != '' and end != '':
+      filters = {"range" : {"updated_at": {"gte": start[0:10], "lte": end[0:10]}}}
+  elif start != '':
+      filters = {"range" : {"updated_at": {"gte": start[0:10]}}}
+  elif end != '':
+      filters = {"range" : {"updated_at": {"lte": end[0:10]}}}
+
+  custom_query = generateCustomQuery(query, filters, user['username'])
+  result = es.search(index="document", body=custom_query)
+
+  data_array = list(map(lambda hit: hit['_source'], result['hits']['hits']))
+  if type == 1:
+      data_array = [doc for doc in data_array if doc['type'] == 'folder']
+  elif type == 2:
+      print("file pdf")
+      data_array = [doc for doc in data_array if doc['type'] == 'file' and doc['title'].endswith(".pdf")]
+  elif type == 3:
+      data_array = [doc for doc in data_array if doc['type'] == 'file' and (doc['title'].endswith(".doc") or doc['title'].endswith(".docx"))]
+  elif type == 4:
+      data_array = [doc for doc in data_array if doc['type'] == 'file' and (doc['title'].endswith(".xls") or doc['title'].endswith(".xlsx"))]
+  return {"success": 1, "data": {"success": 1, "documents": data_array}, "message": "search successfully"}
 
 @app.post('/api/store')
 async def store_document(parent_id = Body(None),
@@ -110,10 +138,17 @@ async def store_document(parent_id = Body(None),
     except Exception as e:
         # Nếu có lỗi, rollback giao dịch
         db.rollback()
-        print("Error occurred during database transaction:", e)
+        return {"success": 0, "message": "Khởi tạo tài liệu thất bại"}
 
 @app.get('/api/documents')
-async def myDocuments(Authorization: str = Header("Authorization"), db: Session = Depends(get_db), parent_id = None, marked = None, deleted = None):
+async def myDocuments(Authorization: str = Header("Authorization"),
+                      db: Session = Depends(get_db),
+                      parent_id = None,
+                      marked = None,
+                      deleted = None,
+                      type = None,
+                      start = None,
+                      end = None):
     try:
         print(parent_id)
         if Authorization is None:
@@ -121,7 +156,7 @@ async def myDocuments(Authorization: str = Header("Authorization"), db: Session 
         token = Authorization.split(' ')[1]
         user = await get_current_user(token)
         documents = None
-        query = db.query(Document).filter(Document.user_id == user['id']).order_by(Document.created_at.desc())
+        query = db.query(Document).filter(Document.user_id == user['id']).order_by(Document.updated_at.desc())
         if parent_id:
             query = query \
                 .filter(Document.parent_id == parent_id).filter(Document.deleted_at.is_(None))
@@ -132,12 +167,27 @@ async def myDocuments(Authorization: str = Header("Authorization"), db: Session 
             query = query.filter(Document.marked)
         if deleted and not parent_id:
             query = query.filter(Document.deleted_at.isnot(None))
+        if start:
+            query = query.filter(Document.updated_at >= start)
+        if end:
+            query = query.filter(Document.updated_at <= end)
         documents = query
-        folders = [doc for doc in documents if doc.type == 'folder']
-        files = [doc for doc in documents if doc.type == 'file']
-
+        folders = []
+        files = []
+        print(type, start, end)
+        if type == '1':
+            folders = [doc for doc in documents if doc.type == 'folder']
+        elif type == '2':
+            print("file pdf")
+            files = [doc for doc in documents if doc.type == 'file' and doc.name.endswith(".pdf")]
+        elif type == '3':
+            files = [doc for doc in documents if doc.type == 'file' and (doc.name.endswith(".doc") or doc.name.endswith(".docx"))]
+        elif type == '4':
+            files = [doc for doc in documents if doc.type == 'file' and (doc.name.endswith(".xls") or doc.name.endswith(".xlsx"))]
+        else:
+            folders = [doc for doc in documents if doc.type == 'folder']
+            files = [doc for doc in documents if doc.type == 'file']
         result = {"folders": folders, "files": files}
-        print(len(result["folders"]))
         return {"success": 1, "data": result, "message": "get documents successfully"}
     except Exception as err:
         return {"success": 0, "message": str(err)}
@@ -150,7 +200,6 @@ async def updateDocument(request: Request, id: int, Authorization: str = Header(
         token = Authorization.split(' ')[1]
         user = await get_current_user(token)
         data = await request.json()
-        print(data)
         db.begin()
         current =  db.query(Document).filter(Document.id == id).first()
         oldName = f"{current.parent_id}_{current.name}"
@@ -161,7 +210,6 @@ async def updateDocument(request: Request, id: int, Authorization: str = Header(
             if current.type == "file":
                 newName = f"{current.parent_id}_{data['name']}"
             data['title'] = data['name']
-        print(newName)
         if newName:
             moveFile(user['id'], oldName, newName)
             url = getUrl(f"/Documents/{user['id']}/{newName}")
@@ -189,7 +237,6 @@ async def updateDocument(request: Request, id: int, Authorization: str = Header(
         es.update_by_query(index="document", body=update_query)
         data.pop('title', None)
         data['updated_at'] = temp_updated_at
-        print(data)
         db.query(Document).filter(Document.id == id).update(data)
         db.commit()
         return {"success": 1, "message": "toggle marked successfully"}
@@ -327,7 +374,7 @@ async def deleteDocument(id: int, Authorization: str = Header("Authorization"), 
             }
         }
         es.delete_by_query(index="document", body=delete_query)
-        db.query(Document).filter(Document.id == id).delete()
+        db.query(Document).filter(or_(Document.id == id, Document.parent_id.in_(childFolders))).delete()
         db.commit()
         return {"success": 1, "message": "delete successfully"}
     except Exception as e:
@@ -381,7 +428,7 @@ async def moveMenu(Authorization: str = Header("Authorization"), db: Session = D
         user = await get_current_user(token)
         documents = None
         parentFolder = None
-        query = db.query(Document).filter(Document.type == "folder").order_by(Document.created_at.desc())
+        query = db.query(Document).filter(Document.type == "folder").order_by(Document.updated_at.desc())
         if parent_id:
             documents = query.filter(Document.parent_id == parent_id).all()
             parentFolder = query.filter(Document.id == parent_id).first()
@@ -425,7 +472,7 @@ async def store_document(id: int,
             }
         }
         es.delete_by_query(index="document", body=delete_query)
-        bulkInsertDocuments.apply_async((file.filename, user, current.parent_id, method, content, id, current.url), countdown=5)
+        bulkInsertDocuments.apply_async((file.filename, user, current.parent_id, 'auto', content, id, current.url), countdown=5)
         return {"success": 1,  "message": "save documents successfully"}
     except Exception as err:
         return {"success": 0, "message": str(err)}

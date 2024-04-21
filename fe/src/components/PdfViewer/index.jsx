@@ -1,5 +1,6 @@
 import { PdfViewerComponent, Toolbar, Magnification, Navigation, LinkAnnotation, BookmarkView,
   ThumbnailView, Print, TextSelection, Annotation, TextSearch, FormFields, FormDesigner, Inject} from '@syncfusion/ej2-react-pdfviewer';
+import './index.scss'
 
   PdfViewerComponent.Inject(Toolbar)
 function PdfViewer({url}) {

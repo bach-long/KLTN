@@ -44,7 +44,8 @@ class DataLoader():
                     "title": self.name,
                     "created_at": current_time, "updated_at": current_time,
                     "author": self.user['username'],
-                    "deleted_at": None
+                    "deleted_at": None,
+                    "type": "file"
                 }}
     print(parsed['content'])
     return document
@@ -84,6 +85,7 @@ class DataLoader():
             "title": self.name,
             "created_at": current_time, "updated_at": current_time,
             "author": self.user['username'],
-            "deleted_at": None
+            "deleted_at": None,
+            "type": "folder"
           }
       }])

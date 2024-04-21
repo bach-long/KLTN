@@ -5,12 +5,12 @@ import {Typography} from 'antd'
 import { toggleTrash, updateDocument } from '../../services/documents'
 import {toast} from 'react-toastify'
 
-const Options = ({setOpenInfo, setOpenMove, document, setDocument}) => {
+const Options = ({setOpenInfo, setOpenMove, document, setDocument, setDocuments}) => {
   const handleMark = async () => {
     try {
       const setMark = document.marked ? 0 : 1
       const response = await updateDocument(document.id, {marked: setMark});
-      if(!response.data.success) {
+      if(!response.success) {
         throw new Error(response.data.message)
       }
       setDocument({...document, marked: setMark})
@@ -25,8 +25,14 @@ const Options = ({setOpenInfo, setOpenMove, document, setDocument}) => {
       const response = await toggleTrash(document.id, {type: type});
       if(!response.success) {
         throw new Error(response.message)
+      } else {
+        setDocuments((prev) => {
+          return {
+            folders: document.type === "folder" ? prev.folders.filter(element => {return element.id != document.id}) : [...prev.folders],
+            files: document.type === "file" ? prev.files.filter(element => {return element.id != document.id}) : [...prev.files]
+          }
+        });
       }
-      setDocument({...document, deleted_at: response.data.deleted_at})
     } catch (err) {
       toast.error(`Có lỗi xảy ra khi cập nhật tài liệu${err.message}`)
     }

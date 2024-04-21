@@ -17,7 +17,7 @@ const More = ({openInfo, setOpenInfo, folder, setFolder}) => {
   </Popover>)
 }
 
-function Folder({folder}) {
+function Folder({folder, setDocuments}) {
   const [openInfo, setOpenInfo] = useState(false);
   const [openMove, setOpenMove] = useState(false);
   const [document, setDocument] = useState(folder);
@@ -26,13 +26,13 @@ function Folder({folder}) {
     <div onContextMenu={e => {e.stopPropagation()}} onClick={(e)=>{e.stopPropagation()}}>
       <div onContextMenu={e => {e.stopPropagation()}} onClick={(e)=>{e.stopPropagation()}} onDoubleClick={(e)=>{e.stopPropagation()}}>
         <Info open={openInfo} setOpen={setOpenInfo} id={document.id}/>
-        <MovingMenu open={openMove} setOpen={setOpenMove} parentId={document.parent_id} id={document.id}/>
+        <MovingMenu open={openMove} setOpen={setOpenMove} parentId={document.parent_id} id={document.id} document={document} setCurrentDocuments={setDocuments}/>
       </div>
       <Popover className='folder'
         overlayInnerStyle={{padding: "0%"}}
         placement='rightTop'
-        content={folder.deleted_at ? <TrashOptions openInfo={openInfo} setOpenInfo={setOpenInfo} openMove={openMove} setOpenMove={setOpenMove} document={document} setDocument={setDocument}/> :
-        <Options openInfo={openInfo} setOpenInfo={setOpenInfo} openMove={openMove} setOpenMove={setOpenMove} document={document} setDocument={setDocument}/>}
+        content={folder.deleted_at ? <TrashOptions document={document} setDocument={setDocument} setDocuments={setDocuments}/> :
+        <Options setOpenInfo={setOpenInfo} setOpenMove={setOpenMove} document={document} setDocument={setDocument} setDocuments={setDocuments}/>}
         style={{cursor: "pointer"}} trigger={['contextMenu']}
         zIndex={100}
       >

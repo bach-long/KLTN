@@ -13,6 +13,9 @@ import { useNavigate } from 'react-router-dom';
 import SideBar from '../../components/SideBar';
 import {toast} from 'react-toastify';
 import SearchBar from '../../components/SearchBar';
+import HomeLayout from '../../layouts/HomeLayout';
+import TypeSelector from '../../components/TypeSelector';
+import DateSelector from '../../components/DateSelector';
 
 function Me() {
   const [selectedMenu, setSelectedMenu] = useState("home");
@@ -20,14 +23,19 @@ function Me() {
   const {authUser} = useContext(AuthContext);
   const [open, setOpen] = useState();
   const [newFolderOpen, setNewFolderOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [type, setType] = useState();
   const [fileType, setFileType] = useState();
+  const [date, setDate] = useState();
+  const [refresh, setRefresh] = useState(1);
   const navigate = useNavigate();
   const handleBackward = (e) => {
     setCurrent({parentId: e.target.getAttribute('folderid') ? parseInt(e.target.getAttribute('folderid')) : null, level: parseInt(e.target.getAttribute('level'))});
     setBreadcrum(prev => {return prev.slice(0, 1 + parseInt(e.target.getAttribute('level')))});
   }
-
+  const navbarItems = [
+    {name: 'Home', path: '/'},
+    {name: 'Cá nhân', path: '/me'},
+  ]
   const [current, setCurrent] = useState({parentId: null, level: 0});
   const [breadcrum, setBreadcrum] = useState([{title: <Typography.Link style={{fontSize: 18}} folderid={null} level={0} onClick={handleBackward}><HomeOutlined /> Thư mục của bạn</Typography.Link>}])
 
@@ -71,9 +79,11 @@ function Me() {
   }
 
   useEffect(() => {
+    console.log('reload')
     const getDocs = async () => {
       try {
-        const data = await myDocuments(current.parentId, selectedMenu === 'marked' ? true : null, selectedMenu === 'deleted' ? true : null);
+        const data = await myDocuments(current.parentId, selectedMenu === 'marked' ? true : null, selectedMenu === 'deleted' ? true : null,
+          fileType, date && date.dateString[0] ? date.dateString[0] : null, date && date.dateString[1] ? date.dateString[1] : null);
         setDocuments(data.data);
         if (data.success === 0) {
           throw new Error(data.message);
@@ -83,7 +93,7 @@ function Me() {
       }
     }
     getDocs();
-  }, [authUser, JSON.stringify(current)]);
+  }, [JSON.stringify(authUser), JSON.stringify(current), refresh, fileType, JSON.stringify(date)]);
 
   useEffect(() => {
     if(!authUser) {
@@ -92,58 +102,67 @@ function Me() {
   }, [JSON.stringify(authUser)]);
 
   useEffect(() => {
+    setFileType(null);
+    setDate(null);
     setBreadcrum([{title: <Typography.Link style={{fontSize: 18}} folderid={null} level={0} onClick={handleBackward}><HomeOutlined /> Thư mục của bạn</Typography.Link>}]);
     const getDocs = async () => {
-      const data = await myDocuments(null, selectedMenu === 'marked' ? true : null, selectedMenu === 'deleted' ? true : null);
+      const data = await myDocuments(null, selectedMenu === 'marked' ? true : null, selectedMenu === 'deleted' ? true : null,
+        fileType, date && date.dateString[0] ? date.dateString[0] : null, date && date.dateString[1] ? date.dateString[1] : null);
       setDocuments(data.data);
     }
     getDocs();
-  }, [authUser, selectedMenu]);
+  }, [selectedMenu]);
 
   return (
-    <div id="my-documents">
-      <UploadDocument open={open} setOpen={setOpen} parentId={current.parentId} fileType={fileType}/>
-      <AddFolderModal open={newFolderOpen} setOpen={setNewFolderOpen} parentId={current.parentId}/>
-      <Dropdown trigger={["contextMenu"]} menu={{items}}>
-      <Row className='me' gutter={0}>
-        <Col className='sidebar' span={3}>
-          <SideBar setSelectedMenu={setSelectedMenu} setBreadcrum={setBreadcrum} handleBackward={handleBackward}/>
-        </Col>
-        <Col className='documents' span={21} style={{borderRadius: 10}}>
-          <div style={{marginLeft: 10}}>
-          <Breadcrumb style={{marginBottom: 50}} items={breadcrum}/>
-          <SearchBar loading={loading} setLoading={setLoading} setDocuments={setDocuments} documents={documents}/>
-          <div className='folders'>
-            <h2>Folders</h2>
-            <Row gutter={[16, 16]} className="result">
-              {documents?.folders.map((folder) => (
-                <Col span={4} key={folder.id}>
-                  <div onDoubleClick={()=>{
-                    handleFoward(folder.id, folder.name)
-                  }}>
-                    <Folder folder={folder}/>
-                  </div>
-                </Col>
-              ))}
-            </Row>
-          </div>
-          <div className='files'>
-          <h2>Files</h2>
-          <Row gutter={[16, 16]} className="result">
-              {documents?.files.map((document) => (
-                <Col span={4} key={document.id}>
-                  <div>
-                  {<Thumbnail file={document}/>}
-                  </div>
-                </Col>
-              ))}
-            </Row>
-          </div>
-          </div>
-        </Col>
-      </Row>
-      </Dropdown>
-    </div>
+    <HomeLayout items={navbarItems}>
+      <div id="my-documents">
+        <UploadDocument open={open} setOpen={setOpen} parentId={current.parentId} fileType={fileType} setRefresh={setRefresh}/>
+        <AddFolderModal open={newFolderOpen} setOpen={setNewFolderOpen} parentId={current.parentId} setRefresh={setRefresh}/>
+        <Dropdown trigger={["contextMenu"]} menu={{items}}>
+        <div>
+          <Row className='me' gutter={0}>
+            <Col className='sidebar' span={3}>
+              <SideBar setSelectedMenu={setSelectedMenu} setBreadcrum={setBreadcrum} handleBackward={handleBackward}/>
+            </Col>
+            <Col className='documents' span={21} style={{borderRadius: 10}}>
+              <div style={{marginLeft: 10}}>
+              <Breadcrumb items={breadcrum}/>
+              <SearchBar/>
+              <TypeSelector type={fileType} setType={setFileType}/>
+              <DateSelector date={date} setDate={setDate}/>
+              <div className='folders'>
+                <h2>Folders</h2>
+                <Row gutter={[16, 16]} className="result">
+                  {documents?.folders.map((folder) => (
+                    <Col span={4} key={folder.id}>
+                      <div onDoubleClick={()=>{
+                        handleFoward(folder.id, folder.name)
+                      }}>
+                        <Folder folder={folder} setDocuments={setDocuments}/>
+                      </div>
+                    </Col>
+                  ))}
+                </Row>
+              </div>
+              <div className='files'>
+              <h2>Files</h2>
+              <Row gutter={[16, 16]} className="result">
+                  {documents?.files.map((document) => (
+                    <Col span={4} key={document.id}>
+                      <div>
+                      {<Thumbnail file={document} setDocuments={setDocuments}/>}
+                      </div>
+                    </Col>
+                  ))}
+                </Row>
+              </div>
+              </div>
+            </Col>
+          </Row>
+        </div>
+        </Dropdown>
+      </div>
+    </HomeLayout>
   )
 }
 

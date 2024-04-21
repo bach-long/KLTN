@@ -1,35 +1,54 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import './index.scss'
-import {SpreadsheetComponent} from '@syncfusion/ej2-react-spreadsheet'
+import {RangeDirective, RangesDirective, SheetDirective, SheetsDirective, SpreadsheetComponent} from '@syncfusion/ej2-react-spreadsheet'
 import axios from 'axios';
 import { saveDocument } from '../../services/documents';
 import {SaveOutlined} from '@ant-design/icons'
+import { toast } from 'react-toastify';
 
 function ExcelViewer({id, url, name}) {
+  const [loading, setLoading] = useState(false)
   let container;
-
-  const onToolbarClick = async (args) => {
-    console.log(await container.saveAsJson())
-    // const savedDocument = await container.documentEditor.saveAsBlob('Docx');
-    // const newFile = new File([savedDocument], name, { type: savedDocument.type })
-    // console.log(newFile)
-    // const check = true // await compareFiles(initFile, newFile)
-    // if(!check) {
-    //   const formData = new FormData()
-    //   formData.append("file", newFile)
-    //   await saveDocument(id, formData)
-    // } else {
-    //   alert("File không có thay đổi")
-    // }
-    // console.log(savedDocument)
-  };
-
+  let savedAsBlob = false;
   const onCreated = () => {
-    container?.addToolbarItems("Home", [
-      { type: "Separator" },
-      { text: "Save", tooltipText: "Save", prefixIcon: "e-de-ctnr-lock", click: async () => {await onToolbarClick()}},
-    ], 0)
-  };
+
+    container.addToolbarItems("Home", [
+        { type: "Separator" },
+        { text: "Save", tooltipText: "Save", prefixIcon: "e-de-ctnr-lock", click: () => { savedAsBlob = true; container.save();}, disabled: loading ? true : false},
+    ], 0);
+
+}
+
+  const beforeSave = (args) => {
+    if (savedAsBlob) {
+      args.needBlobData = true; // To trigger the saveComplete event.
+      args.isFullPost = false; // Get the spreadsheet data as blob data in the saveComplete event.
+    }
+  }
+
+  const saveComplete = async (args) => {
+    try {
+      //This blob can be uploaded to your required server, database, or file path.
+      console.log(args.blobData)
+      const savedDocument = args.blobData;
+      const newFile = new File([savedDocument], name, { type: savedDocument.type })
+      console.log(newFile)
+      const formData = new FormData()
+      formData.append("file", newFile)
+      const response = await saveDocument(id, formData);
+      setLoading(true);
+      if (response.success) {
+        toast.success("Lưu thành công");
+      } else {
+        throw new Error("Lưu thất bại");
+      }
+      savedAsBlob = false;
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
     const fetchFile= async () =>{
@@ -49,11 +68,20 @@ function ExcelViewer({id, url, name}) {
 
   return (
     <div>
-      <SpreadsheetComponent ref={(scope) => {container = scope}} created={onCreated} height='90vh'
+      <SpreadsheetComponent ref={(scope) => {container = scope}} created={onCreated} height='100vh'
+        beforeSave={beforeSave}
+        saveComplete={async (args) => {await saveComplete(args)}}
         openUrl='https://ej2services.syncfusion.com/production/web-services/api/spreadsheet/open'
         saveUrl='https://ej2services.syncfusion.com/production/web-services/api/spreadsheet/save'
-
-      ></SpreadsheetComponent>
+      >
+        <SheetsDirective>
+          <SheetDirective>
+            <RangesDirective>
+              <RangeDirective></RangeDirective>
+            </RangesDirective>
+          </SheetDirective>
+        </SheetsDirective>
+      </SpreadsheetComponent>
     </div>
   )
 }

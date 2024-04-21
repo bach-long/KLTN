@@ -5,6 +5,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { login } from '../../services/Auth';
 import { useContext, useState } from 'react';
 import { AuthContext } from '../../providers/AuthProvider';
+import { toast } from 'react-toastify';
 
 function Login() {
   const [form] = Form.useForm();
@@ -17,11 +18,17 @@ function Login() {
     try {
       setLoading(true);
       const data = await login(values);
+      if (data.success) {
+        toast.success("Đăng nhập thành công")
+      } else {
+        throw new Error("Đăng nhập thất bại")
+      }
       localStorage.setItem("accessToken", data.data.token)
       localStorage.setItem('authUser', JSON.stringify(data.data.user))
       setAuthUser(data.data.user)
       navigate('/')
     } catch (err) {
+      toast.error("Đăng nhập thất bại")
       console.error('Error fetching data:', err);
     } finally {
       setLoading(false);
