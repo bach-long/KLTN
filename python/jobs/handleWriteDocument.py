@@ -3,7 +3,7 @@ from preprocessing import DataLoader
 import os
 import shutil
 
-app = Celery('jobs', broker='redis://localhost:6379/0', include=['jobs.handleWriteDocument'])
+app = Celery('jobs', broker='redis://redis:6379/0', include=['jobs.handleWriteDocument'])
 
 @app.task
 def bulkInsertDocuments(filename, user, parent_id, method, content, id, url):

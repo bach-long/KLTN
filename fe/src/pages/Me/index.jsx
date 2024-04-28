@@ -79,7 +79,6 @@ function Me() {
   }
 
   useEffect(() => {
-    console.log('reload')
     const getDocs = async () => {
       try {
         const data = await myDocuments(current.parentId, selectedMenu === 'marked' ? true : null, selectedMenu === 'deleted' ? true : null,
@@ -124,11 +123,11 @@ function Me() {
             <Col className='sidebar' span={3}>
               <SideBar setSelectedMenu={setSelectedMenu} setBreadcrum={setBreadcrum} handleBackward={handleBackward}/>
             </Col>
-            <Col className='documents' span={21} style={{borderRadius: 10}}>
+            <Col className='documents' span={20} style={{borderRadius: 10}}>
               <div style={{marginLeft: 10}}>
               <Breadcrumb items={breadcrum}/>
               <SearchBar/>
-              <TypeSelector type={fileType} setType={setFileType}/>
+              <TypeSelector type={type} setType={setType}/>
               <DateSelector date={date} setDate={setDate}/>
               <div className='folders'>
                 <h2>Folders</h2>
@@ -138,7 +137,7 @@ function Me() {
                       <div onDoubleClick={()=>{
                         handleFoward(folder.id, folder.name)
                       }}>
-                        <Folder folder={folder} setDocuments={setDocuments}/>
+                        <Folder folder={folder} setDocuments={setDocuments} selectedMenu={selectedMenu} current={current}/>
                       </div>
                     </Col>
                   ))}
@@ -150,7 +149,7 @@ function Me() {
                   {documents?.files.map((document) => (
                     <Col span={4} key={document.id}>
                       <div>
-                      {<Thumbnail file={document} setDocuments={setDocuments}/>}
+                      {<Thumbnail file={document} setDocuments={setDocuments} selectedMenu={selectedMenu} current={current}/>}
                       </div>
                     </Col>
                   ))}

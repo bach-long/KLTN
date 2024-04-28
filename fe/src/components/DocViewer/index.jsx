@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react'
 import {DocumentEditorContainerComponent, Toolbar, Inject} from '@syncfusion/ej2-react-documenteditor'
-import {SaveOutlined} from '@ant-design/icons'
 import './index.scss'
 import axios from 'axios'
 import { saveDocument } from '../../services/documents'
@@ -8,6 +7,7 @@ import { AuthContext } from '../../providers/AuthProvider'
 import { useContext } from 'react'
 import { toast } from 'react-toastify'
 import { showSpinner, hideSpinner, createSpinner } from '@syncfusion/ej2-popups';
+import TitleHeader from '../TitleHeader'
 
 function DocViewer({id, url, name}) {
   const {authUser} = useContext(AuthContext);
@@ -93,10 +93,11 @@ function DocViewer({id, url, name}) {
       setLoading(false);
     }
   };
-
+  console.log(name)
   return (
-    <div>
-      <DocumentEditorContainerComponent id="container" width='100vw' height='100vh' enableComment={true} ref={(scope) => { container = scope; }}
+    <div className='doc-viewer'>
+      <TitleHeader name={name} type={'doc'}/>
+      <DocumentEditorContainerComponent id="container" width='100vw' height='95%' title={name} enableComment={true} ref={(scope) => { container = scope; }}
         currentUser={authUser.username}
         serviceUrl="https://ej2services.syncfusion.com/production/web-services/api/documenteditor/"
         toolbarItems={items}

@@ -11,8 +11,8 @@ import json
 # ocr = converter.convert(file_path="data/image_ocr.png", meta=None)[0]
 # print(ocr)
 
-tika_server_url = 'http://localhost:9998/tika'
-document_store = ElasticsearchDocumentStore(host="localhost", port=9200, index="document")
+tika_server_url = 'http://0.0.0.0:9998/tika'
+document_store = ElasticsearchDocumentStore(host="elasticsearch", port=9200, index="document")
 endpoint_url = 'https://lens.google.com/v3/upload'
 
 class DataLoader():
@@ -34,7 +34,7 @@ class DataLoader():
     file_path = f"./static/{self.user['id']}/{self.name}"
     print(file_path)
     print(self.method)
-    parsed = post_image(file_path, endpoint_url) if self.method == "handWriten" else parser.from_file(file_path)
+    parsed = post_image(file_path, endpoint_url) if self.method == "handWriten" else parser.from_file(filename=file_path, serverEndpoint=tika_server_url)
     document = {"content": parsed['content'],
                 "meta": {
                     "url": self.url,

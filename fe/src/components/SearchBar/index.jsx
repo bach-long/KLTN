@@ -52,7 +52,7 @@ function SearchBar() {
   };
 
   return (
-    <div id="home">
+    <div id="home" onContextMenu={(e) =>{e.stopPropagation()}}>
       <Row className="search-bar">
         <Button type='primary' onClick={() => {setOpenSearch(true)}}><SearchOutlined />Tìm kiếm </Button>
       </Row>
@@ -65,7 +65,7 @@ function SearchBar() {
           setDate();
           setResult([]);
         }}
-        width={"90vw"}
+        width={"90%"}
         footer={null}
         zIndex={100}
       >

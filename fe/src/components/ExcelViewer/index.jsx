@@ -5,6 +5,7 @@ import axios from 'axios';
 import { saveDocument } from '../../services/documents';
 import {SaveOutlined} from '@ant-design/icons'
 import { toast } from 'react-toastify';
+import TitleHeader from '../TitleHeader';
 
 function ExcelViewer({id, url, name}) {
   const [loading, setLoading] = useState(false)
@@ -67,8 +68,9 @@ function ExcelViewer({id, url, name}) {
 
 
   return (
-    <div>
-      <SpreadsheetComponent ref={(scope) => {container = scope}} created={onCreated} height='100vh'
+    <div className='sheet-viewer'>
+      <TitleHeader name={name} type={'sheet'}/>
+      <SpreadsheetComponent ref={(scope) => {container = scope}} created={onCreated} height='95%'
         beforeSave={beforeSave}
         saveComplete={async (args) => {await saveComplete(args)}}
         openUrl='https://ej2services.syncfusion.com/production/web-services/api/spreadsheet/open'
