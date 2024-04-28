@@ -5,12 +5,13 @@ import { getMovingMenu, updateDocument } from '../../services/documents';
 import { toast } from 'react-toastify';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 
-function MovingMenu({open, setOpen, parentId, id, document, setCurrentDocuments}) {
+function MovingMenu({open, setOpen, parentId, id, document, setCurrentDocuments, selectedMenu, currentPosition}) {
   const [documents, setDocuments] = useState([]);
   const [parentFolder, setParentFolder] = useState();
   const [folderId, setFolderId] = useState(parentId);
   const [current, setCurrent] = useState()
   const [checkCurrent, setCheckCurrent] = useState(false)
+  console.log(currentPosition)
   useEffect(() => {
     if(open) {
       const getFolders = async () => {
@@ -41,12 +42,14 @@ function MovingMenu({open, setOpen, parentId, id, document, setCurrentDocuments}
         throw new Error(data.message);
       } else {
         toast.success("Đã di chuyển tài liệu");
-        setCurrentDocuments((prev) => {
-          return {
-            folders: document.type === "folder" ? prev.folders.filter(element => {return element.id != document.id}) : [...prev.folders],
-            files: document.type === "file" ? prev.files.filter(element => {return element.id != document.id}) : [...prev.files]
-          }
-        });
+        if(selectedMenu === 'home' || currentPosition.parentId) {
+          setCurrentDocuments((prev) => {
+            return {
+              folders: document.type === "folder" ? prev.folders.filter(element => {return element.id != document.id}) : [...prev.folders],
+              files: document.type === "file" ? prev.files.filter(element => {return element.id != document.id}) : [...prev.files]
+            }
+          });
+        }
       }
     } catch (err) {
       toast.error(err.message)

@@ -10,7 +10,6 @@ from sqlalchemy.orm import Session
 from database.models import User, Document
 import os.path
 from services.nextCloud import upload_file, getUrl, moveFile, delete
-from services.handWrittenRecognization import detect_document;
 from dotenv import load_dotenv;
 import os
 import tensorflow as tf
@@ -20,7 +19,7 @@ from elasticsearch import Elasticsearch
 from const.dateTime import mysqlDatetime, elasticsearchDatetime
 from const.customQuery import generateCustomQuery
 
-es = Elasticsearch(["localhost:9200"])
+es = Elasticsearch(["elasticsearch:9200"])
 
 app = FastAPI(debug=True)
 load_dotenv()
@@ -47,7 +46,7 @@ HASH_ALGORITHM = os.getenv('HASH_ALGORITHM')
 async def get_current_user(token):
     try:
         user = jwt.decode(token, ACCESS_TOKEN_SECRET, algorithms=[HASH_ALGORITHM])
-        if user is None:
+        if user is None or user.get('activated_at') is None:
             raise credentials_exception
 
     except JWTError:
@@ -100,6 +99,7 @@ async def store_document(parent_id = Body(None),
                          Authorization: str = Header("Authorization"),
                          method = Body('auto'),
                          db: Session = Depends(get_db)):
+    check = False
     try:
         if Authorization is None:
             raise credentials_exception
@@ -110,8 +110,9 @@ async def store_document(parent_id = Body(None),
             content = file.file.read()
             print('start upload')
             db.begin()
-            upload_file(user['id'], f'{parent_id}_{file.filename}', content)
-            print("upload xong")
+            check = upload_file(user['id'], f'{parent_id}_{file.filename}', content)
+            if not check:
+                raise Exception("Tải file thất bại")
             url = getUrl(f"/Documents/{user['id']}/{parent_id}_{file.filename}")
             print(method)
             document = Document(
@@ -136,7 +137,9 @@ async def store_document(parent_id = Body(None),
             result = await data_storage.addFolderInfo()
         return {"success": 1, "message": "create successfully"}
     except Exception as e:
-        # Nếu có lỗi, rollback giao dịch
+        print(e)
+        if check:
+            delete(user['id'], f"{parent_id}_{file.filename}")
         db.rollback()
         return {"success": 0, "message": "Khởi tạo tài liệu thất bại"}
 
@@ -194,6 +197,10 @@ async def myDocuments(Authorization: str = Header("Authorization"),
 
 @app.put('/api/documents/{id}')
 async def updateDocument(request: Request, id: int, Authorization: str = Header("Authorization"), db: Session = Depends(get_db)):
+    check = False
+    oldName = None
+    newName = None
+    user = None
     try:
         if Authorization is None:
             raise credentials_exception
@@ -203,7 +210,8 @@ async def updateDocument(request: Request, id: int, Authorization: str = Header(
         db.begin()
         current =  db.query(Document).filter(Document.id == id).first()
         oldName = f"{current.parent_id}_{current.name}"
-        newName = None
+        if not oldName:
+            raise Exception("Lỗi thông tin file")
         if 'parent_id' in data and current.type == "file":
             newName = f"{data['parent_id']}_{current.name}"
         elif 'name' in data:
@@ -211,9 +219,12 @@ async def updateDocument(request: Request, id: int, Authorization: str = Header(
                 newName = f"{current.parent_id}_{data['name']}"
             data['title'] = data['name']
         if newName:
-            moveFile(user['id'], oldName, newName)
+            check = moveFile(user['id'], oldName, newName)
+            if not check:
+                raise Exception("Thay đổi thất bại")
             url = getUrl(f"/Documents/{user['id']}/{newName}")
             data['url'] = url
+
         data['updated_at'] = elasticsearchDatetime()
         temp_updated_at = mysqlDatetime()
         update_query = {
@@ -234,14 +245,16 @@ async def updateDocument(request: Request, id: int, Authorization: str = Header(
             params_script[key] = value
         update_query["script"]["source"] = source_script
         update_query["script"]["params"] = params_script
-        es.update_by_query(index="document", body=update_query)
         data.pop('title', None)
         data['updated_at'] = temp_updated_at
         db.query(Document).filter(Document.id == id).update(data)
+        es.update_by_query(index="document", body=update_query)
         db.commit()
         return {"success": 1, "message": "toggle marked successfully"}
     except Exception as e:
         # Nếu có lỗi, rollback giao dịch
+        if check:
+            moveFile(user['id'], newName, oldName)
         db.rollback()
         print("Error occurred during database transaction:", e)
         return {"success": 0, "message": "Error occurred during database transaction"}
@@ -316,11 +329,10 @@ async def toggleTrash(request: Request, id: int, Authorization: str = Header("Au
             params_script[key] = value
         update_query["script"]["source"] = source_script
         update_query["script"]["params"] = params_script
-        print(update_query)
-        es.update_by_query(index="document", body=update_query)
         if data.get("deleted_at"):
             data['deleted_at'] = mysql_deleted_at
         db.query(Document).filter(Document.id == id).update(data)
+        es.update_by_query(index="document", body=update_query)
         db.commit()
         db.refresh(current)
         return {"success": 1, "data": current,  "message": "toggle trash successfully"}
@@ -332,6 +344,8 @@ async def toggleTrash(request: Request, id: int, Authorization: str = Header("Au
 
 @app.delete('/api/delete/{id}')
 async def deleteDocument(id: int, Authorization: str = Header("Authorization"), db: Session = Depends(get_db)):
+    check = False
+    name = None
     try:
         if Authorization is None:
             raise credentials_exception
@@ -353,8 +367,8 @@ async def deleteDocument(id: int, Authorization: str = Header("Authorization"), 
         childFolders = [dict(row)['id'] for row in childFolders]
         childFolders.append(id)
         name = f"{current.parent_id}_{current.name}"
-        if current.type == "file":
-            delete(user['id'], name)
+        if name is None:
+            raise Exception("Thông tin sai")
         delete_query = {
             "query": {
                 "bool": {
@@ -373,8 +387,12 @@ async def deleteDocument(id: int, Authorization: str = Header("Authorization"), 
                 }
             }
         }
-        es.delete_by_query(index="document", body=delete_query)
         db.query(Document).filter(or_(Document.id == id, Document.parent_id.in_(childFolders))).delete()
+        es.delete_by_query(index="document", body=delete_query)
+        if current.type == "file":
+            check = delete(user['id'], name)
+            if not check:
+                raise Exception("Thay đổi thất bại")
         db.commit()
         return {"success": 1, "message": "delete successfully"}
     except Exception as e:
@@ -433,7 +451,6 @@ async def moveMenu(Authorization: str = Header("Authorization"), db: Session = D
             documents = query.filter(Document.parent_id == parent_id).all()
             parentFolder = query.filter(Document.id == parent_id).first()
         else:
-            print("deo co")
             documents = query.filter(Document.parent_id.is_(None)).all()
             parentFolder = None
         return {"success": 1, "data": {"documents": documents, "parentFolder": parentFolder}, "message": "get documents successfully"}

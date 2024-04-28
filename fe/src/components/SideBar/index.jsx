@@ -22,7 +22,7 @@ function SideBar({setSelectedMenu, setBreadcrum, handleBackward}) {
   return (
     <Menu
       style={{
-        height: "100vh",
+        height: "100%",
         backgroundColor: "var(--background)",
         borderRadius: 10
       }}

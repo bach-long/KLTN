@@ -17,7 +17,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.listen(PORT, async () => {
   console.log(`Server is running on port ${PORT}`);
   // Sync database models with the database
-  await sequelize.sync()
+  await sequelize.authenticate()
   console.log('Database synced');
 });
 

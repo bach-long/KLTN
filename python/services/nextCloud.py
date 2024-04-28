@@ -9,8 +9,9 @@ def upload_file(userId, fileName, content):
   return check
 
 def getUrl(path):
-  url = oc.share_file_with_link(path).get_link()
-  return url.replace('http://', 'https://') + "/download"
+  url = oc.share_file_with_link(path)
+  print(url)
+  return url.get_link().replace('http://', 'https://') + "/download"
 
 def moveFile(userId, oldName, newName):
   print(f'/Documents/{userId}/{oldName}')

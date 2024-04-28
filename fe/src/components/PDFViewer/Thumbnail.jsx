@@ -8,18 +8,11 @@ import MovingMenu from '../MovingMenu';
 import TrashOptions from '../TrashOptions';
 import { Link } from 'react-router-dom';
 
-const Thumbnail = ({file, setDocuments}) => {
-  // const thumbnailPluginInstance = thumbnailPlugin();
-  // const { Cover } = thumbnailPluginInstance;
-
+const Thumbnail = ({file, setDocuments, selectedMenu, current}) => {
   const [openInfo, setOpenInfo] = useState(false);
   const [openMove, setOpenMove] = useState(false);
-  const [document, setDocument] = useState(file)
-  console.log(document)
+  const [document, setDocument] = useState(file);
   const {url, name, id, title} = document
-  // const pageThumbnailPluginInstance = pageThumbnailPlugin({
-  //     PageThumbnail: <Cover getPageIndex={() => 0} width={250} />,
-  // });
   const style = {fontSize: '1150%', marginTop: 15};
 
   let thumbnail = <FolderTwoTone style = {style}/>
@@ -39,7 +32,8 @@ const Thumbnail = ({file, setDocuments}) => {
       <div onContextMenu={e => {e.stopPropagation()}} onClick={(e)=>{e.stopPropagation()}}>
         <div onContextMenu={e => {e.stopPropagation()}} onClick={(e)=>{e.stopPropagation()}} onDoubleClick={(e)=>{e.stopPropagation()}}>
           <Info open={openInfo} setOpen={setOpenInfo} id={id} url={url}/>
-          <MovingMenu open={openMove} setOpen={setOpenMove} parentId={document.parent_id} id={document.id} document={document} setCurrentDocuments={setDocuments}/>
+          <MovingMenu open={openMove} setOpen={setOpenMove} parentId={document.parent_id} id={document.id} document={document} setCurrentDocuments={setDocuments}
+          selectedMenu={selectedMenu} currentPosition={current}/>
         </div>
         <Popover
           overlayInnerStyle={{padding: "0%"}}
@@ -49,7 +43,6 @@ const Thumbnail = ({file, setDocuments}) => {
           style={{cursor: "pointer"}} trigger={['contextMenu']}
           zIndex={100}
         >
-          {/* <Viewer fileUrl={url} plugins={[pageThumbnailPluginInstance, thumbnailPluginInstance]}/> */}
           {thumbnail}
           <p>{name ?? title}</p>
         </Popover>
