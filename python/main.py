@@ -93,19 +93,19 @@ async def search_document(Authorization: str = Header("Authorization"),
 
 @app.post('/api/store')
 async def store_document(parent_id = Body(None),
-                         type = Body(None),
+                         type : str = Body(...),
                          folder_name = Body(None),
                          file: UploadFile = File('file'),
                          Authorization: str = Header("Authorization"),
                          method = Body('auto'),
                          db: Session = Depends(get_db)):
     check = False
+    print(type)
     try:
         if Authorization is None:
             raise credentials_exception
         token = Authorization.split(' ')[1]
         user = await get_current_user(token)
-
         if type == 'file':
             content = file.file.read()
             print('start upload')

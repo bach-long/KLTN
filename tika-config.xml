@@ -1,24 +1,15 @@
 <properties>
   <parsers>
     <parser class="org.apache.tika.parser.DefaultParser">
-      <!-- this is not formally necessary, but prevents loading of unnecessary parser -->
       <parser-exclude class="org.apache.tika.parser.pdf.PDFParser"/>
     </parser>
     <parser class="org.apache.tika.parser.pdf.PDFParser">
       <params>
-        <!-- these are the defaults; you only need to specify the ones you want
-            to modify -->
-        <!-- if you want to extract content, whether or not the PDF allows extraction
-             at all, do not set this parameter.  If you want to extract content and
-             the PDF allows for extraction for accessibility, set this to true.
-             If you do not want to extract content when the PDF does not allow extraction
-             but does allow extraction for accessibility, set this to false -->
         <param name="allowExtractionForAccessibility" type="bool">true</param>
         <param name="averageCharTolerance" type="float">0.3</param>
         <param name="detectAngles" type="bool">false</param>
         <param name="extractAcroFormContent" type="bool">true</param>
         <param name="extractActions" type="bool">false</param>
-        <!-- as of 2.8.0 -->
         <param name="extractIncrementalUpdateInfo" type="bool">false</param>
         <param name="catchIntermediateIOExceptions" type="bool">true</param>
         <param name="dropThreshold" type="float">2.5</param>
@@ -31,7 +22,6 @@
         <param name="extractUniqueInlineImagesOnly" type="bool">true</param>
         <param name="ifXFAExtractOnlyXFA" type="bool">false</param>
         <param name="maxMainMemoryBytes" type="long">-1</param>
-        <!-- as of 2.8.0 -->
         <param name="maxIncrementalUpdates" type="int">10000</param>
         <param name="ocrDPI" type="int">300</param>
         <param name="ocrImageFormatName" type="string">png</param>
@@ -40,19 +30,16 @@
         <param name="ocrStrategy" type="string">auto</param>
         <param name="ocrStrategyAuto" type="string">better</param>
         <param name="ocrImageType" type="string">gray</param>
-         <!-- as of 2.8.0 -->
         <param name="parseIncrementalUpdates" type="bool">false</param>
         <param name="setKCMS" type="bool">false</param>
         <param name="sortByPosition" type="bool">false</param>
         <param name="spacingTolerance" type="float">0.5</param>
         <param name="suppressDuplicateOverlappingText" type="bool">false</param>
-        <!-- as of versions after 2.8.0 -->
         <param name="throwOnEncryptedPayload" type="bool">false</param>
       </params>
     </parser>
     <parser class="org.apache.tika.parser.microsoft.ooxml.OOXMLParser">
       <params>
-        <!-- Office Parser parameters -->
         <param name="extractMacros" type="bool">true</param>
         <param name="extractOLEObjects" type="bool">true</param>
         <!-- Add more parameters as needed -->

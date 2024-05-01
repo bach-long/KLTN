@@ -1,7 +1,12 @@
 import owncloud
+from const.environment import returnEnvironment
 
 oc = owncloud.Client('https://cloud.bachnguyencoder.id.vn/')
-oc.login('kltn1912', 'bach19122002')
+env = returnEnvironment()
+if env == "dev":
+  oc.login('kltn1912', 'bach19122002')
+elif env == "test":
+  oc.login('kltn1912test', 'test19122002')
 
 def upload_file(userId, fileName, content):
   print(f'/Documents/{userId}/{fileName}')
