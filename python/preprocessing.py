@@ -11,7 +11,7 @@ import json
 # ocr = converter.convert(file_path="data/image_ocr.png", meta=None)[0]
 # print(ocr)
 
-tika_server_url = 'http://0.0.0.0:9998/tika'
+tika_server_url = 'http://tika:9998/tika'
 document_store = ElasticsearchDocumentStore(host="elasticsearch", port=9200, index="document")
 endpoint_url = 'https://lens.google.com/v3/upload'
 

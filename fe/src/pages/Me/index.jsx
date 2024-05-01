@@ -127,7 +127,7 @@ function Me() {
               <div style={{marginLeft: 10}}>
               <Breadcrumb items={breadcrum}/>
               <SearchBar/>
-              <TypeSelector type={type} setType={setType}/>
+              <TypeSelector type={fileType} setType={setFileType}/>
               <DateSelector date={date} setDate={setDate}/>
               <div className='folders'>
                 <h2>Folders</h2>
