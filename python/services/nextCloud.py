@@ -28,3 +28,13 @@ def delete(userId, name):
   print(f'/Documents/{userId}/{name}')
   check = oc.delete(f'/Documents/{userId}/{name}')
   return check
+
+def checkExist(userId, name):
+  try:
+    print("check exists")
+    info = oc.file_info(f'/Documents/{userId}/{name}')
+    print(info)
+    return info
+  except Exception as e:
+    print("Error:", e)
+    return False

@@ -18,6 +18,7 @@ from sqlalchemy import or_, text
 from elasticsearch import Elasticsearch
 from const.dateTime import mysqlDatetime, elasticsearchDatetime
 from const.customQuery import generateCustomQuery
+from middlewares.documents import checkBelongsToUser, checkExistDocument, checkExistFolder
 
 es = Elasticsearch(["elasticsearch:9200"])
 
@@ -107,6 +108,8 @@ async def store_document(parent_id = Body(None),
         token = Authorization.split(' ')[1]
         user = await get_current_user(token)
         if type == 'file':
+            if checkExistDocument(user['id'], f'{parent_id}_{file.filename}'):
+                raise Exception("Tài liệu trùng tên")
             content = file.file.read()
             print('start upload')
             db.begin()
@@ -130,6 +133,8 @@ async def store_document(parent_id = Body(None),
         elif type == 'folder':
             document = Document(name=folder_name, type="folder", user_id=user["id"], parent_id=parent_id, url = None)
             db.begin()
+            if checkExistFolder(db, parent_id, folder_name):
+                raise Exception("Folder trùng tên")
             db.add(document)
             db.commit()
             db.refresh(document)
@@ -211,15 +216,30 @@ async def updateDocument(request: Request, id: int, Authorization: str = Header(
         current =  db.query(Document).filter(Document.id == id).first()
         if not current:
             raise Exception("Không tồn tại tài liệu")
+        if not checkBelongsToUser(user['id'], current.user_id):
+            raise Exception("Tài liệu không thuộc quyền sở hữu")
         if current.type == "file":
             oldName = f"{current.parent_id}_{current.name}"
         if not oldName and current.type == "file":
             raise Exception("Lỗi thông tin file")
-        if 'parent_id' in data and current.type == "file":
-            newName = f"{data['parent_id']}_{current.name}"
-        elif 'name' in data and current.type == "file":
-            newName = f"{current.parent_id}_{data['name']}"
-            data['title'] = data['name']
+        if 'parent_id' in data:
+            if current.type == "file":
+                newName = f"{data['parent_id']}_{current.name}"
+                if checkExistDocument(user["id"], newName):
+                    raise Exception("Tài liệu trùng tên")
+            elif current.type =="folder":
+                if checkExistFolder(db, data['parent_id'], current.name):
+                    raise Exception("Folder trùng tên")
+        elif 'name' in data:
+            if current.type == "file":
+                newName = f"{current.parent_id}_{data['name']}"
+                if checkExistDocument(user["id"], newName):
+                    raise Exception("Tài liệu trùng tên")
+                data['title'] = data['name']
+            elif current.type == "folder":
+                print(data['name'])
+                if checkExistFolder(db, current.parent_id, data['name']):
+                    raise Exception("Folder trùng tên")
         if newName:
             check = moveFile(user['id'], oldName, newName)
             if not check:
@@ -274,6 +294,8 @@ async def toggleTrash(request: Request, id: int, Authorization: str = Header("Au
         current =  db.query(Document).filter(Document.id == id).first()
         if not current:
             raise Exception("Không tồn tại tài liệu")
+        if not checkBelongsToUser(user['id'], current.user_id):
+            raise Exception("Tài liệu không thuộc quyền sở hữu")
         recursiveQuery = f"""WITH RECURSIVE child_documents AS (
                             SELECT *
                             FROM documents
@@ -359,6 +381,8 @@ async def deleteDocument(id: int, Authorization: str = Header("Authorization"), 
         current =  db.query(Document).filter(Document.id == id).first()
         if not current:
             raise Exception("Không tồn tại tài liệu")
+        if not checkBelongsToUser(user['id'], current.user_id):
+            raise Exception("Tài liệu không thuộc quyền sở hữu")
         recursiveQuery = f"""WITH RECURSIVE child_documents AS (
                             SELECT *
                             FROM documents
@@ -426,6 +450,8 @@ async def getMetadata(id: int, Authorization: str = Header("Authorization"), db:
                     SELECT * FROM parent_directories ORDER BY parent_id;""")
         result = db.execute(sql)
         documents = [dict(row) for row in result]
+        if not checkBelongsToUser(user['id'], documents[0]['user_id']):
+            raise Exception("Tài liệu không thuộc quyền sở hữu")
         print(documents)
         return {"success": 1, "data": documents, "message": "get documents successfully"}
     except Exception as err:
@@ -439,6 +465,10 @@ async def getMetadata(id: int, Authorization: str = Header("Authorization"), db:
         token = Authorization.split(' ')[1]
         user = await get_current_user(token)
         document = db.query(Document).filter(Document.id == id).first()
+        if not document:
+            raise Exception("Không tồn tại tài liệu")
+        if not checkBelongsToUser(user['id'], document.user_id):
+            raise Exception("Tài liệu không thuộc quyền sở hữu")
         return {"success": 1, "data": document, "message": "get documents successfully"}
     except Exception as err:
         return {"success": 0, "message": str(err)}
@@ -478,8 +508,11 @@ async def store_document(id: int,
         print(file.content_type)
         db.begin()
         current =  db.query(Document).filter(Document.id == id).first()
+        if not current:
+            raise Exception("Không tồn tại tài liệu")
+        if not checkBelongsToUser(user['id'], current.user_id):
+            raise Exception("Tài liệu không thuộc quyền sở hữu")
         db.query(Document).filter(Document.id == id).update({"updated_at": mysqlDatetime()})
-        print(current.parent_id)
         check = upload_file(user['id'], f'{current.parent_id}_{file.filename}', content)
         if not check:
             raise Exception("Tải file thất bại")
