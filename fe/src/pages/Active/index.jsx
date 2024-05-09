@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { getUserByToken } from '../../services/Auth';
 import { Button } from 'antd';
+import './index.scss';
 
 function Active() {
   const { token } = useParams();
@@ -23,8 +24,10 @@ function Active() {
     <div>
       {check &&
         <>
-          <p>Tài khoản của bạn đã được kích hoạt</p>
-          <Button onClick={handleClick} type='primary'>Login</Button>
+          <div className='active'>Tài khoản của bạn đã được kích hoạt</div>
+          <div className='active-button'>
+            <Button onClick={handleClick} type='primary'>Login</Button>
+          </div>
         </>
       }
     </div>

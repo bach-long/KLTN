@@ -209,14 +209,16 @@ async def updateDocument(request: Request, id: int, Authorization: str = Header(
         data = await request.json()
         db.begin()
         current =  db.query(Document).filter(Document.id == id).first()
-        oldName = f"{current.parent_id}_{current.name}"
-        if not oldName:
+        if not current:
+            raise Exception("Không tồn tại tài liệu")
+        if current.type == "file":
+            oldName = f"{current.parent_id}_{current.name}"
+        if not oldName and current.type == "file":
             raise Exception("Lỗi thông tin file")
         if 'parent_id' in data and current.type == "file":
             newName = f"{data['parent_id']}_{current.name}"
-        elif 'name' in data:
-            if current.type == "file":
-                newName = f"{current.parent_id}_{data['name']}"
+        elif 'name' in data and current.type == "file":
+            newName = f"{current.parent_id}_{data['name']}"
             data['title'] = data['name']
         if newName:
             check = moveFile(user['id'], oldName, newName)
@@ -250,7 +252,7 @@ async def updateDocument(request: Request, id: int, Authorization: str = Header(
         db.query(Document).filter(Document.id == id).update(data)
         es.update_by_query(index="document", body=update_query)
         db.commit()
-        return {"success": 1, "message": "toggle marked successfully"}
+        return {"success": 1, "message": "Cập nhật tài liệu thành công"}
     except Exception as e:
         # Nếu có lỗi, rollback giao dịch
         if check:
@@ -270,6 +272,8 @@ async def toggleTrash(request: Request, id: int, Authorization: str = Header("Au
         print(data)
         db.begin()
         current =  db.query(Document).filter(Document.id == id).first()
+        if not current:
+            raise Exception("Không tồn tại tài liệu")
         recursiveQuery = f"""WITH RECURSIVE child_documents AS (
                             SELECT *
                             FROM documents
@@ -353,6 +357,8 @@ async def deleteDocument(id: int, Authorization: str = Header("Authorization"), 
         user = await get_current_user(token)
         db.begin()
         current =  db.query(Document).filter(Document.id == id).first()
+        if not current:
+            raise Exception("Không tồn tại tài liệu")
         recursiveQuery = f"""WITH RECURSIVE child_documents AS (
                             SELECT *
                             FROM documents
@@ -459,7 +465,7 @@ async def moveMenu(Authorization: str = Header("Authorization"), db: Session = D
 
 @app.post('/api/save/{id}')
 async def store_document(id: int,
-                         file: UploadFile = File('file'),
+                         file: UploadFile = File(...),
                          Authorization: str = Header("Authorization"),
                          method: str = 'auto',
                          db: Session = Depends(get_db)):
@@ -470,7 +476,9 @@ async def store_document(id: int,
         user = await get_current_user(token)
         content = file.file.read()
         print(file.content_type)
+        db.begin()
         current =  db.query(Document).filter(Document.id == id).first()
+        db.query(Document).filter(Document.id == id).update({"updated_at": mysqlDatetime()})
         print(current.parent_id)
         check = upload_file(user['id'], f'{current.parent_id}_{file.filename}', content)
         if not check:
@@ -489,7 +497,9 @@ async def store_document(id: int,
             }
         }
         es.delete_by_query(index="document", body=delete_query)
+        db.commit()
         bulkInsertDocuments.apply_async((file.filename, user, current.parent_id, 'auto', content, id, current.url), countdown=5)
         return {"success": 1,  "message": "save documents successfully"}
     except Exception as err:
+        db.rollback()
         return {"success": 0, "message": str(err)}
