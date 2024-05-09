@@ -45,7 +45,7 @@ function Login() {
         form={form}
         name="Login"
         labelCol={{
-          span: 8,
+          span: 7,
         }}
         wrapperCol={{
           span: 16,
@@ -103,11 +103,15 @@ function Login() {
             span: 16,
           }}
         >
-          <Button type="primary" htmlType="submit" style={{fontSize: '16px', fontWeight: 600}}>
+          <Button type="primary"
+            htmlType="submit"
+            style={{fontSize: '16px', fontWeight: 600}}>
             Login
           </Button>
         </Form.Item>
-        <span>Chưa có tài khoản? <Link to="/auth/signup">Đăng ký tại đây</Link></span>
+        <span>Chưa có tài khoản?
+          <Link to="/auth/signup">Đăng ký tại đây</Link>
+        </span>
       </Form>
     </div>
   )

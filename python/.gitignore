@@ -3,6 +3,7 @@ services/__pycache__
 services/thitrantamson_hqb_thg.HN.2013.02
 jobs/__pycache__
 database/__pycache__
+tests/.pytest_cache
 static
 .env
 alembic

@@ -14,7 +14,7 @@ queue.process((job) => {
   const { to, subject, text } = job.data;
 
   transporter.sendMail({
-    from: 'nguyenbach19122002@gmail.com', // Thay thế bằng email của bạn
+    from: 'nguyenbach19122002@gmail.com',
     to,
     subject,
     text

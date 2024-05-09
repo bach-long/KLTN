@@ -5,17 +5,18 @@ import {Typography} from 'antd'
 import { toggleTrash, updateDocument } from '../../services/documents'
 import {toast} from 'react-toastify'
 
-const Options = ({setOpenInfo, setOpenMove, document, setDocument, setDocuments}) => {
+const Options = ({setOpenInfo, setOpenMove, setChangeNameOpen, document, setDocument, setDocuments}) => {
   const handleMark = async () => {
     try {
       const setMark = document.marked ? 0 : 1
       const response = await updateDocument(document.id, {marked: setMark});
       if(!response.success) {
-        throw new Error(response.data.message)
+        throw new Error(response.message)
       }
       setDocument({...document, marked: setMark})
     } catch (err) {
-      toast.error(`Có lỗi xảy ra khi đánh dấu tài liệu${err.message}`)
+      print(err.message)
+      toast.error(`Có lỗi xảy ra khi đánh dấu tài liệu`)
     }
   }
 
@@ -44,7 +45,7 @@ const Options = ({setOpenInfo, setOpenMove, document, setDocument, setDocuments}
      key: "detail"
     },
     {
-      label: <Typography.Text><EditOutlined /> Đổi tên</Typography.Text>,
+      label: <Typography.Text onClick={() => {setChangeNameOpen(true);}}><EditOutlined /> Đổi tên</Typography.Text>,
       key: "rename"
     },
     {

@@ -39,10 +39,10 @@ function Signup() {
         form={form}
         name="Signup"
         labelCol={{
-          span: 10,
+          span: 6,
         }}
         wrapperCol={{
-          span: 22,
+          span: 16,
         }}
         style={{
           maxWidth: 600,
@@ -106,7 +106,7 @@ function Signup() {
           <Input.Password style={{fontSize: '16px'}}/>
         </Form.Item>
         <Form.Item
-          label="Confirm Password"
+          label="Confirm"
           name="confirm_password"
           rules={[
             {

@@ -23,7 +23,6 @@ function Me() {
   const {authUser} = useContext(AuthContext);
   const [open, setOpen] = useState();
   const [newFolderOpen, setNewFolderOpen] = useState(false);
-  const [type, setType] = useState();
   const [fileType, setFileType] = useState();
   const [date, setDate] = useState();
   const [refresh, setRefresh] = useState(1);
