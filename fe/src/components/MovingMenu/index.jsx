@@ -14,6 +14,7 @@ function MovingMenu({open, setOpen, parentId, id, document, setCurrentDocuments,
   console.log(currentPosition)
   useEffect(() => {
     if(open) {
+      console.log(checkCurrent)
       const getFolders = async () => {
         try {
           const data = await getMovingMenu(folderId);
@@ -32,12 +33,12 @@ function MovingMenu({open, setOpen, parentId, id, document, setCurrentDocuments,
       }
       getFolders()
     }
-  }, [open, parentId, folderId, id])
+  }, [open, parentId, folderId, id, checkCurrent])
 
   const handleMove = async (id, data) => {
     try {
-      setOpen(false)
       const result = await updateDocument(id, data)
+      console.log(result.success === 0)
       if (result.success === 0) {
         throw new Error(data.message);
       } else {
@@ -52,7 +53,7 @@ function MovingMenu({open, setOpen, parentId, id, document, setCurrentDocuments,
         }
       }
     } catch (err) {
-      toast.error(err.message)
+      toast.error("Lỗi khi di chuyển tài liệu")
     }
   }
 
@@ -67,7 +68,7 @@ function MovingMenu({open, setOpen, parentId, id, document, setCurrentDocuments,
       }}
       width={'30vw'}
       footer={[
-        <Button disabled={(folderId == parentId) || (!folderId && !parentId)} key="Ok" type='primary' onClick={() => {handleMove(id, {parent_id: folderId})}}>
+        <Button disabled={(folderId == parentId) || (!folderId && !parentId)} key="Ok" type='primary' onClick={async () => {await handleMove(id, {parent_id: folderId})}}>
           Di chuyển
         </Button>
       ]}
