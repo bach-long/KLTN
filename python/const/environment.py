@@ -4,5 +4,5 @@ def changeToTest():
   environment = "test"
   return environment
 
-def returnEnvironment():
+def returnEnvironmentTest():
   return environment

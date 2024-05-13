@@ -6,13 +6,12 @@ from tika import parser
 from services.nextCloud import getUrl
 from const.dateTime import elasticsearchDatetime
 from services.googleLens import post_image
-import json
-# converter = ImageToTextConverter(remove_numeric_tables=True, valid_languages=["eng"])
-# ocr = converter.convert(file_path="data/image_ocr.png", meta=None)[0]
-# print(ocr)
+from const.environment import environment
 
 tika_server_url = 'http://tika:9998/tika'
-document_store = ElasticsearchDocumentStore(host="elasticsearch", port=9200, index="document")
+elasticsearchUrl = "elasticsearch"
+# elasticsearchUrl = "34.146.182.92"
+document_store = ElasticsearchDocumentStore(host=elasticsearchUrl, port=9200, index="document")
 endpoint_url = 'https://lens.google.com/v3/upload'
 
 class DataLoader():

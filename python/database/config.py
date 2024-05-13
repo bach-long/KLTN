@@ -16,6 +16,9 @@ print("port", DATABASE_PORT, DATABASE_PASSWORD)
 
 mysqlConnection = f"mysql+mysqlconnector://{DATABASE_USER}:{DATABASE_PASSWORD}@{DATABASE_HOST}:{DATABASE_PORT}/{DATABASE_NAME}"
 
+# #db test
+# mysqlConnection = "mysql+mysqlconnector://root:bach1912@mysql-db:3306/kltn_test"
+
 engine = create_engine(mysqlConnection)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
