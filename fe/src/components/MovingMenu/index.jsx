@@ -4,6 +4,7 @@ import {FolderFilled} from '@ant-design/icons'
 import { getMovingMenu, updateDocument } from '../../services/documents';
 import { toast } from 'react-toastify';
 import { ArrowLeftOutlined } from '@ant-design/icons';
+import SpinLoading from '../Loading/SpinLoading';
 
 function MovingMenu({open, setOpen, parentId, id, document, setCurrentDocuments, selectedMenu, currentPosition}) {
   const [documents, setDocuments] = useState([]);
@@ -11,6 +12,8 @@ function MovingMenu({open, setOpen, parentId, id, document, setCurrentDocuments,
   const [folderId, setFolderId] = useState(parentId);
   const [current, setCurrent] = useState()
   const [checkCurrent, setCheckCurrent] = useState(false)
+  const [loading, setLoading] = useState(false)
+
   console.log(currentPosition)
   useEffect(() => {
     if(open) {
@@ -54,6 +57,8 @@ function MovingMenu({open, setOpen, parentId, id, document, setCurrentDocuments,
       }
     } catch (err) {
       toast.error("Lỗi khi di chuyển tài liệu")
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -68,7 +73,7 @@ function MovingMenu({open, setOpen, parentId, id, document, setCurrentDocuments,
       }}
       width={'30vw'}
       footer={[
-        <Button disabled={(folderId == parentId) || (!folderId && !parentId)} key="Ok" type='primary' onClick={async () => {await handleMove(id, {parent_id: folderId})}}>
+        <Button disabled={(folderId == parentId) || (!folderId && !parentId) || loading} key="Ok" type='primary' onClick={async () => {setLoading(true); await handleMove(id, {parent_id: folderId})}}>
           Di chuyển
         </Button>
       ]}
@@ -79,22 +84,23 @@ function MovingMenu({open, setOpen, parentId, id, document, setCurrentDocuments,
         <h3><ArrowLeftOutlined onClick={() => { if(parentFolder) {setFolderId(parentFolder.parent_id)} }}/> {parentFolder ? parentFolder.name : ' Tài liệu của tôi'}</h3>
         <hr className="modal-divider" /> {/* Đường kẻ ngang */}
         <div className="content-section">
-      {open && documents.length > 0 ?
-          (<>
-            <Menu style={{height: 500, overflow: 'auto'}}>
-                {documents.map((item) => (
-                  <Menu.Item key={item.id} onClick={() => {setFolderId(item.id)}}>
-                    <Typography.Text key={item.id} style={{fontSize : 16}}> <FolderFilled /> {item.name} </Typography.Text>
-                  </Menu.Item>
-                ))}
-            </Menu>
-          </>
-          ) : (
-            <div style={{height: 500, overflow: 'auto'}}>
-              <Typography.Text>Không có thư mục thích hợp</Typography.Text>
-            </div>
-          )
-      }
+        {open && documents.length > 0 ?
+            (<>
+              <Menu style={{height: 500, overflow: 'auto'}}>
+                  {documents.map((item) => (
+                    <Menu.Item key={item.id} onClick={() => {setFolderId(item.id)}}>
+                      <Typography.Text key={item.id} style={{fontSize : 16}}> <FolderFilled /> {item.name} </Typography.Text>
+                    </Menu.Item>
+                  ))}
+              </Menu>
+            </>
+            ) : (
+              <div style={{height: 500, overflow: 'auto'}}>
+                <Typography.Text>Không có thư mục thích hợp</Typography.Text>
+              </div>
+            )
+        }
+        {loading && <SpinLoading size={"2rem"}/>}
         </div>
       </div>
       </Modal>

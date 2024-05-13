@@ -1,11 +1,13 @@
 import { Input, Modal } from 'antd'
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { Form } from 'antd'
 import { storeDocument } from '../../services/documents'
 import { toast } from 'react-toastify'
+import SpinLoading from '../Loading/SpinLoading'
 
 function AddFolderModal({open, setOpen, parentId, setRefresh}) {
   const [form] = Form.useForm()
+  const [loading, setLoading] = useState(false)
 
   const handleAddFolder = async () => {
     try {
@@ -25,6 +27,7 @@ function AddFolderModal({open, setOpen, parentId, setRefresh}) {
       toast.error(err.message)
     } finally {
       form.resetFields(['folderName']);
+      setLoading(false)
     }
   }
 
@@ -36,7 +39,8 @@ function AddFolderModal({open, setOpen, parentId, setRefresh}) {
         setOpen(false)
       }}
       width={'20vw'}
-      onOk={handleAddFolder}
+      onOk={async () => {setLoading(true); await handleAddFolder();}}
+      okButtonProps={{disabled: loading ? true : false}}
     >
       <Form
         form={form}
@@ -69,6 +73,7 @@ function AddFolderModal({open, setOpen, parentId, setRefresh}) {
         >
           <Input />
         </Form.Item>
+        {loading && <SpinLoading size={"2rem"}/>}
       </Form>
     </Modal>
   )
