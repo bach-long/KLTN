@@ -18,7 +18,7 @@ from sqlalchemy import or_, text
 from elasticsearch import Elasticsearch
 from const.dateTime import mysqlDatetime, elasticsearchDatetime
 from const.customQuery import generateCustomQuery
-from middlewares.documents import checkBelongsToUser, checkExistDocument, checkExistFolder
+from middlewares.documents import checkBelongsToUser, checkExistDocument, checkExistFolder, checkNotDelete
 
 elasticsearchUrl = "elasticsearch:9200"
 # elasticsearchUrl = "34.146.182.92:9200"
@@ -221,6 +221,8 @@ async def updateDocument(request: Request, id: int, Authorization: str = Header(
         data = await request.json()
         db.begin()
         current =  db.query(Document).filter(Document.id == id).first()
+        if not checkNotDelete(current):
+            raise Exception("Tài liệu đã xóa")
         if not current:
             raise Exception("Không tồn tại tài liệu")
         if not checkBelongsToUser(user['id'], current.user_id):
@@ -320,9 +322,13 @@ async def toggleTrash(request: Request, id: int, Authorization: str = Header("Au
         elastic_deleted_at = elasticsearchDatetime()
 
         if data["type"] == "delete":
+            if not checkNotDelete(current):
+                raise Exception("Tài liệu đã xóa")
             data['deleted_at'] = elastic_deleted_at
             data['marked'] = 0
         elif data["type"] == "restore":
+            if checkNotDelete(current):
+                raise Exception("Tài liệu chưa bị xóa")
             if current.parent and current.parent.deleted_at:
                 data['parent_id'] = None
                 if current.type == "file":
@@ -389,6 +395,8 @@ async def deleteDocument(id: int, Authorization: str = Header("Authorization"), 
         current =  db.query(Document).filter(Document.id == id).first()
         if not current:
             raise Exception("Không tồn tại tài liệu")
+        if checkNotDelete(current):
+            raise Exception("Tài liệu chưa ở trong thùng rác")
         if not checkBelongsToUser(user['id'], current.user_id):
             raise Exception("Tài liệu không thuộc quyền sở hữu")
         recursiveQuery = f"""WITH RECURSIVE child_documents AS (
@@ -479,6 +487,8 @@ async def getMetadata(id: int, Authorization: str = Header("Authorization"), db:
         document = db.query(Document).filter(Document.id == id).first()
         if not document:
             raise Exception("Không tồn tại tài liệu")
+        if not checkNotDelete(document):
+            raise Exception("Tài liệu đã xóa")
         if not checkBelongsToUser(user['id'], document.user_id):
             raise Exception("Tài liệu không thuộc quyền sở hữu")
         return {"success": 1, "data": document, "message": "get documents successfully"}
@@ -494,7 +504,7 @@ async def moveMenu(Authorization: str = Header("Authorization"), db: Session = D
         user = await get_current_user(token)
         documents = None
         parentFolder = None
-        query = db.query(Document).filter(Document.type == "folder").order_by(Document.updated_at.desc())
+        query = db.query(Document).filter(Document.type == "folder").filter(Document.deleted_at.is_(None)).order_by(Document.updated_at.desc())
         if parent_id:
             documents = query.filter(Document.parent_id == parent_id).all()
             parentFolder = query.filter(Document.id == parent_id).first()
@@ -520,6 +530,8 @@ async def store_document(id: int,
         print(file.content_type)
         db.begin()
         current =  db.query(Document).filter(Document.id == id).first()
+        if not checkNotDelete(current):
+            raise Exception("Tài liệu đã xóa")
         if not current:
             raise Exception("Không tồn tại tài liệu")
         if not checkBelongsToUser(user['id'], current.user_id):

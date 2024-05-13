@@ -24,6 +24,7 @@ function Me() {
   const [open, setOpen] = useState();
   const [newFolderOpen, setNewFolderOpen] = useState(false);
   const [fileType, setFileType] = useState();
+  const [type, setType] = useState()
   const [date, setDate] = useState();
   const [refresh, setRefresh] = useState(1);
   const navigate = useNavigate();
@@ -81,7 +82,7 @@ function Me() {
     const getDocs = async () => {
       try {
         const data = await myDocuments(current.parentId, selectedMenu === 'marked' ? true : null, selectedMenu === 'deleted' ? true : null,
-          fileType, date && date.dateString[0] ? date.dateString[0] : null, date && date.dateString[1] ? date.dateString[1] : null);
+          type, date && date.dateString[0] ? date.dateString[0] : null, date && date.dateString[1] ? date.dateString[1] : null);
         setDocuments(data.data);
         if (data.success === 0) {
           throw new Error(data.message);
@@ -91,7 +92,7 @@ function Me() {
       }
     }
     getDocs();
-  }, [JSON.stringify(authUser), JSON.stringify(current), refresh, fileType, JSON.stringify(date)]);
+  }, [JSON.stringify(authUser), JSON.stringify(current), refresh, fileType, JSON.stringify(date), type]);
 
   useEffect(() => {
     if(!authUser) {
@@ -126,7 +127,7 @@ function Me() {
               <div style={{marginLeft: 10}}>
               <Breadcrumb items={breadcrum}/>
               <SearchBar/>
-              <TypeSelector type={fileType} setType={setFileType}/>
+              <TypeSelector type={type} setType={setType}/>
               <DateSelector date={date} setDate={setDate}/>
               <div className='folders'>
                 <h2>Folders</h2>
