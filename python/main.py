@@ -9,7 +9,7 @@ from database.config import get_db
 from sqlalchemy.orm import Session
 from database.models import User, Document
 import os.path
-from services.nextCloud import upload_file, getUrl, moveFile, delete
+from services.nextCloud import upload_file, getUrl, moveFile, delete, createFolder
 from dotenv import load_dotenv;
 import os
 import tensorflow as tf
@@ -103,21 +103,23 @@ async def store_document(parent_id = Body(None),
                          db: Session = Depends(get_db)):
     check = False
     print(type)
+    name = None
     try:
         if Authorization is None:
             raise credentials_exception
         token = Authorization.split(' ')[1]
         user = await get_current_user(token)
         if type == 'file':
-            if checkExistDocument(user['id'], f'{parent_id}_{file.filename}'):
+            name = file.filename if parent_id is None else f'{parent_id}/{file.filename}'
+            if checkExistDocument(user['id'], name):
                 raise Exception("Tài liệu trùng tên")
             content = file.file.read()
             print('start upload')
             db.begin()
-            check = upload_file(user['id'], f'{parent_id}_{file.filename}', content)
+            check = upload_file(user['id'], name, content)
             if not check:
                 raise Exception("Tải file thất bại")
-            url = getUrl(f"/Documents/{user['id']}/{parent_id}_{file.filename}")
+            url = getUrl(f"/Documents/{user['id']}/{name}")
             print(method)
             document = Document(
                 name=file.filename,
@@ -141,11 +143,14 @@ async def store_document(parent_id = Body(None),
             db.refresh(document)
             data_storage = DataLoader(folder_name, user, parent_id, document.id, None, method)
             result = await data_storage.addFolderInfo()
+            check = createFolder(user['id'], document.id)
+            if not check:
+                raise Exception("Tải folder thất bại")
         return {"success": 1, "data": document.id, "message": "create successfully"}
     except Exception as e:
         print(e)
         if check:
-            delete(user['id'], f"{parent_id}_{file.filename}")
+            delete(user['id'], name)
         db.rollback()
         return {"success": 0, "message": "Khởi tạo tài liệu thất bại", "error": str(e)}
 
@@ -221,12 +226,12 @@ async def updateDocument(request: Request, id: int, Authorization: str = Header(
         if not checkBelongsToUser(user['id'], current.user_id):
             raise Exception("Tài liệu không thuộc quyền sở hữu")
         if current.type == "file":
-            oldName = f"{current.parent_id}_{current.name}"
+            oldName = current.name if current.parent_id is None else f"{current.parent_id}/{current.name}"
         if not oldName and current.type == "file":
             raise Exception("Lỗi thông tin file")
         if 'parent_id' in data:
             if current.type == "file":
-                newName = f"{data['parent_id']}_{current.name}"
+                newName = current.name if data['parent_id'] is None else f"{data['parent_id']}/{current.name}"
                 if checkExistDocument(user["id"], newName):
                     raise Exception("Tài liệu trùng tên")
             elif current.type =="folder":
@@ -234,7 +239,7 @@ async def updateDocument(request: Request, id: int, Authorization: str = Header(
                     raise Exception("Folder trùng tên")
         elif 'name' in data:
             if current.type == "file":
-                newName = f"{current.parent_id}_{data['name']}"
+                newName = data.name if current.parent_id is None else f"{current.parent_id}/{data['name']}"
                 if checkExistDocument(user["id"], newName):
                     raise Exception("Tài liệu trùng tên")
                 data['title'] = data['name']
@@ -316,6 +321,7 @@ async def toggleTrash(request: Request, id: int, Authorization: str = Header("Au
 
         if data["type"] == "delete":
             data['deleted_at'] = elastic_deleted_at
+            data['marked'] = 0
         elif data["type"] == "restore":
             if current.parent and current.parent.deleted_at:
                 data['parent_id'] = None
@@ -397,8 +403,9 @@ async def deleteDocument(id: int, Authorization: str = Header("Authorization"), 
                         SELECT * FROM child_documents ORDER BY parent_id;"""
         childFolders = db.execute(recursiveQuery)
         childFolders = [dict(row)['id'] for row in childFolders]
-        childFolders.append(id)
-        name = f"{current.parent_id}_{current.name}"
+        if current.type == "folder":
+            childFolders.append(id)
+        name = f"{current.parent_id}/{current.name}" if current.type == "file" else id
         if name is None:
             raise Exception("Thông tin sai")
         delete_query = {
@@ -423,8 +430,11 @@ async def deleteDocument(id: int, Authorization: str = Header("Authorization"), 
         es.delete_by_query(index="document", body=delete_query)
         if current.type == "file":
             check = delete(user['id'], name)
-            if not check:
-                raise Exception("Thay đổi thất bại")
+        elif current.type == "folder":
+            check = delete(user['id'], name, childFolders)
+        print(check)
+        if not check:
+            raise Exception("Thay đổi thất bại")
         db.commit()
         return {"success": 1, "message": "delete successfully"}
     except Exception as e:
@@ -515,7 +525,8 @@ async def store_document(id: int,
         if not checkBelongsToUser(user['id'], current.user_id):
             raise Exception("Tài liệu không thuộc quyền sở hữu")
         db.query(Document).filter(Document.id == id).update({"updated_at": mysqlDatetime()})
-        check = upload_file(user['id'], f'{current.parent_id}_{file.filename}', content)
+        name = file.filename if current.parent_id is None else f'{current.parent_id}/{file.filename}'
+        check = upload_file(user['id'], name, content)
         if not check:
             raise Exception("Tải file thất bại")
         delete_query = {

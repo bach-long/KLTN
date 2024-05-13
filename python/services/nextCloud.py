@@ -10,7 +10,7 @@ def upload_file(userId, fileName, content):
   return check
 
 def createFolder(userId, folderId):
-  check = oc.put_directory(f'/Documents/{userId}/{folderId}')
+  check = oc.mkdir(f'/Documents/{userId}/{folderId}/')
   return check
 
 def getUrl(path):
@@ -24,9 +24,14 @@ def moveFile(userId, oldName, newName):
   check = oc.move(f'/Documents/{userId}/{oldName}', f'/Documents/{userId}/{newName}')
   return check
 
-def delete(userId, name):
+def delete(userId, name, childFolders = None):
   print(f'/Documents/{userId}/{name}')
-  check = oc.delete(f'/Documents/{userId}/{name}')
+  check = False
+  if childFolders is not None and len(childFolders) > 0:
+    for folder in childFolders:
+      check = oc.delete(f'/Documents/{userId}/{folder}')
+  else:
+    check = oc.delete(f'/Documents/{userId}/{name}')
   return check
 
 def checkExist(userId, name):
