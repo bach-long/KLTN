@@ -20,8 +20,9 @@ from const.dateTime import mysqlDatetime, elasticsearchDatetime
 from const.customQuery import generateCustomQuery
 from middlewares.documents import checkBelongsToUser, checkExistDocument, checkExistFolder
 
-es = Elasticsearch(["elasticsearch:9200"])
-
+elasticsearchUrl = "elasticsearch:9200"
+# elasticsearchUrl = "34.146.182.92:9200"
+es = Elasticsearch([elasticsearchUrl])
 app = FastAPI(debug=True)
 load_dotenv()
 
@@ -140,13 +141,13 @@ async def store_document(parent_id = Body(None),
             db.refresh(document)
             data_storage = DataLoader(folder_name, user, parent_id, document.id, None, method)
             result = await data_storage.addFolderInfo()
-        return {"success": 1, "message": "create successfully"}
+        return {"success": 1, "data": document.id, "message": "create successfully"}
     except Exception as e:
         print(e)
         if check:
             delete(user['id'], f"{parent_id}_{file.filename}")
         db.rollback()
-        return {"success": 0, "message": "Khởi tạo tài liệu thất bại"}
+        return {"success": 0, "message": "Khởi tạo tài liệu thất bại", "error": str(e)}
 
 @app.get('/api/documents')
 async def myDocuments(Authorization: str = Header("Authorization"),
@@ -206,6 +207,7 @@ async def updateDocument(request: Request, id: int, Authorization: str = Header(
     oldName = None
     newName = None
     user = None
+    print(id)
     try:
         if Authorization is None:
             raise credentials_exception

@@ -1,16 +1,16 @@
 import owncloud
-from const.environment import returnEnvironment
 
 oc = owncloud.Client('https://cloud.bachnguyencoder.id.vn/')
-env = returnEnvironment()
-if env == "dev":
-  oc.login('kltn1912', 'bach19122002')
-elif env == "test":
-  oc.login('kltn1912test', 'test19122002')
+oc.login('kltn1912', 'bach19122002')
+# oc.login('kltn1912test', 'test19122002')
 
 def upload_file(userId, fileName, content):
   print(f'/Documents/{userId}/{fileName}')
   check = oc.put_file_contents(f'/Documents/{userId}/{fileName}', content)
+  return check
+
+def createFolder(userId, folderId):
+  check = oc.put_directory(f'/Documents/{userId}/{folderId}')
   return check
 
 def getUrl(path):
@@ -33,8 +33,8 @@ def checkExist(userId, name):
   try:
     print("check exists")
     info = oc.file_info(f'/Documents/{userId}/{name}')
-    print(info)
-    return info
+    return info is not None
   except Exception as e:
+    print("ngoại lệ check file")
     print("Error:", e)
     return False

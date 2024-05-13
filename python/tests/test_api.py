@@ -12,7 +12,16 @@ from dotenv import load_dotenv
 from jose import jwt
 from database.config import Base
 import os
-from httpx import AsyncClient
+from elasticsearch import Elasticsearch
+import os
+from const.customQuery import generateCustomQuery
+from services.nextCloud import delete, checkExist
+
+# Kết nối đến Elasticsearch
+es = Elasticsearch(["34.146.182.92:9200"])
+if not es.indices.exists(index="document"):
+    # Tạo index mới nếu chưa tồn tại
+    es.indices.create(index="document")
 
 load_dotenv()
 
@@ -83,10 +92,10 @@ def truncate() -> None:
 app.dependency_overrides[get_db] = get_test_db
 
 setup()
+truncate()
 
 def test_store_document_fail_authentication():
     # Assume valid credentials
-    db = SessionLocal()
     headers = {"Authorization": None}
     data = {"parent_id": 1, "type": "file", "method": "auto"}
     files = {"file": ("test.txt", "file content")}
@@ -141,6 +150,68 @@ def test_store_document_fail_no_attribute():
     print(response.json())
     truncate()
     assert response.status_code != 200
+
+def test_store_document_success():
+    # Assume valid credentials
+    user = getRandomUser(1)
+    db = SessionLocal()
+    db.begin()
+    db.add(user)
+    db.commit()
+    insertedUser = db.query(User.id, User.username, User.activated_at).filter(User.username == user.username).first()
+    user_dict = {
+        'id': insertedUser[0],
+        'username': insertedUser[1],
+        'activated_at': insertedUser[2].strftime('%Y-%m-%d %H:%M:%S'),
+    }
+    print(user_dict)
+    token = jwt.encode(user_dict, ACCESS_TOKEN_SECRET, algorithm=HASH_ALGORITHM)
+    headers = {"Authorization": f"Bearer {token}"}
+    data = {"parent_id": None, "type": "file", "method": "auto"}
+    files = {"file": ("sv600_c_excellent.pdf", open("tests/file_test/sv600_c_excellent.pdf", "rb"), "application/pdf")}
+    response = client.post("/api/store", headers=headers, data=data, files=files)
+    print(response.json())
+    db.close()
+    truncate()
+    assert checkExist(insertedUser[0], "None_sv600_c_excellent.pdf") is True
+    delete(insertedUser[0], "None_sv600_c_excellent.pdf")
+    assert response.status_code == 200
+
+def test_change_name_document_success():
+    # Assume valid credentials
+    user = getRandomUser(1)
+    db = SessionLocal()
+    db.begin()
+    db.add(user)
+    db.commit()
+    insertedUser = db.query(User.id, User.username, User.activated_at).filter(User.username == user.username).first()
+    user_dict = {
+        'id': insertedUser[0],
+        'username': insertedUser[1],
+        'activated_at': insertedUser[2].strftime('%Y-%m-%d %H:%M:%S'),
+    }
+    print(user_dict)
+    token = jwt.encode(user_dict, ACCESS_TOKEN_SECRET, algorithm=HASH_ALGORITHM)
+    headers = {"Authorization": f"Bearer {token}"}
+    data = {"parent_id": None, "type": "file", "method": "auto"}
+    files = {"file": ("sv600_c_excellent.pdf", open("tests/file_test/sv600_c_excellent.pdf", "rb"), "application/pdf")}
+    responseUpload = client.post("/api/store", headers=headers, data=data, files=files)
+    data = {"name": "change_data.pdf"}
+    responseChangeName = client.put(f"/api/documents/{responseUpload.json()['data']}", headers=headers, json=data)
+    print(responseChangeName.json())
+    db.close()
+    truncate()
+    assert checkExist(insertedUser[0], "None_change_data.pdf") is True
+    assert responseChangeName.status_code == 200
+    delete(insertedUser[0], "None_change_data.pdf")
+
+def test_update_document_fail_authentication():
+    # Assume valid credentials
+    headers = {"Authorization": None}
+    data = {"name": "new_change.pdf"}
+    response = client.put("/api/store", headers=headers, json=data)
+    truncate()
+    assert response.json()['success'] == 0
 
 def test_get_all_documents_success():
     user = getRandomUser(1)
