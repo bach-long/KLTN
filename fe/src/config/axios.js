@@ -1,18 +1,18 @@
-import axios from 'axios';
+import axios from "axios";
 
 const instance = axios.create({
-  baseURL: 'http://localhost:5000'
+  baseURL: "http://localhost:5000",
 });
 
 const instancePython = axios.create({
-  baseURL: 'http://localhost:8000'
+  baseURL: "http://localhost:8000",
 });
 
 instance.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('accessToken');
+    const token = localStorage.getItem("accessToken");
     if (token) {
-      config.headers.Authorization = 'Bearer ' + token;
+      config.headers.Authorization = "Bearer " + token;
     }
     return config;
   },
@@ -23,9 +23,9 @@ instance.interceptors.request.use(
 
 instancePython.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('accessToken');
+    const token = localStorage.getItem("accessToken");
     if (token) {
-      config.headers.Authorization = 'Bearer ' + token;
+      config.headers.Authorization = "Bearer " + token;
     }
     return config;
   },
@@ -54,4 +54,4 @@ instancePython.interceptors.response.use(
   }
 );
 
-export {instance, instancePython};
+export { instance, instancePython };

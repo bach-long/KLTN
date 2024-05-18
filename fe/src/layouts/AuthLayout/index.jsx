@@ -1,12 +1,8 @@
-import React from 'react'
-import PropTypes from 'prop-types'
+import React from "react";
+import PropTypes from "prop-types";
 
-function AuthLayout({children}) {
-  return (
-    <div>
-      {children}
-    </div>
-  )
+function AuthLayout({ children }) {
+  return <div>{children}</div>;
 }
 
 AuthLayout.propTypes = {
@@ -14,4 +10,4 @@ AuthLayout.propTypes = {
   // other prop types...
 };
 
-export default AuthLayout
+export default AuthLayout;

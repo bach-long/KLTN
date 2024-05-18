@@ -1,15 +1,15 @@
-import React, { useEffect } from 'react'
-import { Button, Form, Input } from 'antd';
-import './login.scss'
-import { Link, useNavigate } from 'react-router-dom';
-import { login } from '../../services/Auth';
-import { useContext, useState } from 'react';
-import { AuthContext } from '../../providers/AuthProvider';
-import { toast } from 'react-toastify';
+import React, { useEffect } from "react";
+import { Button, Form, Input } from "antd";
+import "./login.scss";
+import { Link, useNavigate } from "react-router-dom";
+import { login } from "../../services/Auth";
+import { useContext, useState } from "react";
+import { AuthContext } from "../../providers/AuthProvider";
+import { toast } from "react-toastify";
 
 function Login() {
   const [form] = Form.useForm();
-  const {setAuthUser} = useContext(AuthContext)
+  const { setAuthUser } = useContext(AuthContext);
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
@@ -19,28 +19,27 @@ function Login() {
       setLoading(true);
       const data = await login(values);
       if (data.success) {
-        toast.success("Đăng nhập thành công")
+        toast.success("Đăng nhập thành công");
       } else {
-        throw new Error("Đăng nhập thất bại")
+        throw new Error("Đăng nhập thất bại");
       }
-      localStorage.setItem("accessToken", data.data.token)
-      localStorage.setItem('authUser', JSON.stringify(data.data.user))
-      setAuthUser(data.data.user)
-      navigate('/')
+      localStorage.setItem("accessToken", data.data.token);
+      localStorage.setItem("authUser", JSON.stringify(data.data.user));
+      setAuthUser(data.data.user);
+      navigate("/");
     } catch (err) {
-      toast.error("Đăng nhập thất bại")
-      console.error('Error fetching data:', err);
+      toast.error("Đăng nhập thất bại");
+      console.error("Error fetching data:", err);
     } finally {
       setLoading(false);
     }
-
   };
   const onFinishFailed = (errorInfo) => {
-    console.log('Failed:', errorInfo);
+    console.log("Failed:", errorInfo);
   };
 
   return (
-    <div id='login'>
+    <div id="login">
       <Form
         form={form}
         name="Login"
@@ -52,7 +51,7 @@ function Login() {
         }}
         style={{
           maxWidth: 600,
-          minWidth: 200
+          minWidth: 200,
         }}
         initialValues={{
           remember: true,
@@ -60,24 +59,24 @@ function Login() {
         onFinish={onFinish}
         onFinishFailed={onFinishFailed}
         autoComplete="off"
-        className='form'
+        className="form"
       >
-        <h3 className='form-title'>Đăng Nhập</h3>
+        <h3 className="form-title">Đăng Nhập</h3>
         <Form.Item
           label="Username"
           name="username"
           rules={[
             {
               required: true,
-              message: 'Hãy nhập username!',
+              message: "Hãy nhập username!",
             },
           ]}
           style={{
-            fontSize: '16px',
-            fontWeight: 600
+            fontSize: "16px",
+            fontWeight: 600,
           }}
         >
-          <Input style={{fontSize: '16px'}}/>
+          <Input style={{ fontSize: "16px" }} />
         </Form.Item>
 
         <Form.Item
@@ -86,15 +85,15 @@ function Login() {
           rules={[
             {
               required: true,
-              message: 'Hãy nhập mật khẩu!',
+              message: "Hãy nhập mật khẩu!",
             },
           ]}
           style={{
-            fontSize: '16px',
+            fontSize: "16px",
             fontWeight: 600,
           }}
         >
-          <Input.Password style={{fontSize: '16px'}}/>
+          <Input.Password style={{ fontSize: "16px" }} />
         </Form.Item>
 
         <Form.Item
@@ -103,18 +102,21 @@ function Login() {
             span: 16,
           }}
         >
-          <Button type="primary"
+          <Button
+            type="primary"
             htmlType="submit"
-            style={{fontSize: '16px', fontWeight: 600}}>
+            style={{ fontSize: "16px", fontWeight: 600 }}
+          >
             Login
           </Button>
         </Form.Item>
-        <span>Chưa có tài khoản?
+        <span>
+          Chưa có tài khoản?
           <Link to="/auth/signup">Đăng ký tại đây</Link>
         </span>
       </Form>
     </div>
-  )
+  );
 }
 
-export default Login
+export default Login;

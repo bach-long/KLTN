@@ -1,41 +1,43 @@
-import { Input, Modal } from 'antd'
-import React, { useState } from 'react'
-import { Form } from 'antd'
-import { storeDocument, updateDocument } from '../../services/documents'
-import { toast } from 'react-toastify'
+import { Input, Modal } from "antd";
+import React, { useState } from "react";
+import { Form } from "antd";
+import { storeDocument, updateDocument } from "../../services/documents";
+import { toast } from "react-toastify";
 
-function ChangeNameModal({open, setOpen, document, setDocument}) {
-  const [form] = Form.useForm()
+function ChangeNameModal({ open, setOpen, document, setDocument }) {
+  const [form] = Form.useForm();
 
   const handleChangeName = async () => {
     try {
-      let newName = form.getFieldValue('newName')
+      let newName = form.getFieldValue("newName");
       if (document.type == "file") {
-        newName = newName + "." + document.name.split(".").pop()
+        newName = newName + "." + document.name.split(".").pop();
       }
-      const response = await updateDocument(document.id, {name: newName})
+      const response = await updateDocument(document.id, { name: newName });
       if (response.success) {
-        setDocument(prev => { return {...prev, name: newName} })
+        setDocument((prev) => {
+          return { ...prev, name: newName };
+        });
         toast.success("Đổi tên thành công");
-        setOpen(false)
+        setOpen(false);
       } else {
-        throw new Error("Thao tác thất bại")
+        throw new Error("Thao tác thất bại");
       }
     } catch (err) {
-      toast.error(err.message)
+      toast.error(err.message);
     } finally {
-      form.resetFields(['newName']);
+      form.resetFields(["newName"]);
     }
-  }
+  };
 
   return (
     <Modal
       centered
       open={open}
-      onCancel={()=>{
-        setOpen(false)
+      onCancel={() => {
+        setOpen(false);
       }}
-      width={'20vw'}
+      width={"20vw"}
       onOk={handleChangeName}
       title={document.name}
     >
@@ -51,7 +53,7 @@ function ChangeNameModal({open, setOpen, document, setDocument}) {
         style={{
           maxWidth: 600,
           marginTop: 20,
-          marginRight: 20
+          marginRight: 20,
         }}
         initialValues={{
           remember: true,
@@ -64,7 +66,7 @@ function ChangeNameModal({open, setOpen, document, setDocument}) {
           rules={[
             {
               required: true,
-              message: 'Nhập tên thư mục',
+              message: "Nhập tên thư mục",
             },
           ]}
         >
@@ -72,7 +74,7 @@ function ChangeNameModal({open, setOpen, document, setDocument}) {
         </Form.Item>
       </Form>
     </Modal>
-  )
+  );
 }
 
 export default ChangeNameModal;

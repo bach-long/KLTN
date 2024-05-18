@@ -1,18 +1,18 @@
-import {instance} from '../../config/axios'
-import qs from 'qs'
+import { instance } from "../../config/axios";
+import qs from "qs";
 
 export const signup = (data) => {
-  return instance.post('/auth/signup', data);
+  return instance.post("/auth/signup", data);
 };
 
 export const login = (data) => {
-  return instance.post('/auth/login', data);
+  return instance.post("/auth/login", data);
 };
 
 export const me = () => {
-  return instance.get('/auth/me');
+  return instance.get("/auth/me");
 };
 
-export const getUserByToken= (token) => {
+export const getUserByToken = (token) => {
   return instance.get(`/auth/token/${token}`);
-}
+};

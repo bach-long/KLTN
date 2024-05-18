@@ -3,7 +3,7 @@ import { useLocation, useParams } from "react-router-dom";
 import PdfViewer from "../../components/PdfViewer";
 import DocViewer from "../../components/DocViewer";
 import ExcelViewer from "../../components/ExcelViewer";
-import { getContent, } from "../../services/documents";
+import { getContent } from "../../services/documents";
 
 function Detail() {
   const { id } = useParams();
@@ -29,7 +29,9 @@ function Detail() {
         break;
       case "xlsx":
       case "xls":
-        content = <ExcelViewer id={id} url={document.url} name={document.name} />;
+        content = (
+          <ExcelViewer id={id} url={document.url} name={document.name} />
+        );
         break;
       default:
         content = null;
