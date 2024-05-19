@@ -23,7 +23,6 @@ function MovingMenu({
   const [checkCurrent, setCheckCurrent] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  console.log(currentPosition);
   useEffect(() => {
     if (open) {
       console.log(checkCurrent);

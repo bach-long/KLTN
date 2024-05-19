@@ -4,9 +4,12 @@ import { FolderOutlined } from "@ant-design/icons";
 import { getMetadata } from "../../services/documents";
 import moment from "moment";
 import axios from "axios";
+import { toast } from "react-toastify";
+import SpinLoading from "../Loading/SpinLoading";
 
 function Info({ open, setOpen, id, url }) {
   const [info, setInfo] = useState();
+  const [loading, setLoading] = useState(false)
   async function getFileSize(url) {
     try {
       const response = await axios.head(url);
@@ -31,27 +34,34 @@ function Info({ open, setOpen, id, url }) {
   useEffect(() => {
     if (open && id) {
       const fetchInfo = async () => {
-        let data = await getMetadata(id);
-        const size = url ? await getFileSize(url) : null;
-        data = data.data;
-        const lastItem = data.slice(-1)[0];
-        const extractInfo = {
-          path:
-            data.length > 1
-              ? `/${data
-                  .slice(0, data.length - 1)
-                  .map((item) => item.name)
-                  .join("/")}`
-              : "/",
-          name: lastItem.name,
-          type: url ? lastItem.name.split(".").slice(-1)[0] : "folder",
-          marked: data.marked,
-          createdAt: moment(lastItem.created_at).format("YYYY-MM-DD HH:mm:ss"),
-          updatedAt: moment(lastItem.updated_at).format("YYYY-MM-DD HH:mm:ss"),
-          size: size,
-        };
-        setInfo(extractInfo);
+        try {
+          let data = await getMetadata(id);
+          const size = url ? await getFileSize(url) : null;
+          data = data.data;
+          const lastItem = data.slice(-1)[0];
+          const extractInfo = {
+            path:
+              data.length > 1
+                ? `/${data
+                    .slice(0, data.length - 1)
+                    .map((item) => item.name)
+                    .join("/")}`
+                : "/",
+            name: lastItem.name,
+            type: url ? lastItem.name.split(".").slice(-1)[0] : "folder",
+            marked: data.marked,
+            createdAt: moment(lastItem.created_at).format("YYYY-MM-DD HH:mm:ss"),
+            updatedAt: moment(lastItem.updated_at).format("YYYY-MM-DD HH:mm:ss"),
+            size: size,
+          };
+          setInfo(extractInfo);
+        } catch (error) {
+          toast.error(error.message);
+        } finally {
+          setLoading(false);
+        }
       };
+      setLoading(true)
       fetchInfo();
     }
   }, [open, id, url]);
@@ -78,7 +88,7 @@ function Info({ open, setOpen, id, url }) {
       zIndex={100}
       title={<Typography.Title level={4}>Thông tin chi tiết</Typography.Title>}
     >
-      {open && id && (
+      {open && id && !loading && (
         <div>
           <Typography.Title level={5}>Vị trí</Typography.Title>
           <Typography.Link>
@@ -99,6 +109,10 @@ function Info({ open, setOpen, id, url }) {
           <Typography.Title level={5}>Lần sửa đổi gần nhất</Typography.Title>
           <Typography.Text>{info?.updatedAt}</Typography.Text>
         </div>
+      )}
+
+      {open && id && loading && (
+        <SpinLoading size={"2rem"} />
       )}
     </Modal>
   );

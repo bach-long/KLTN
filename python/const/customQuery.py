@@ -12,8 +12,8 @@ def generateCustomQuery(query, filters, username) :
                       }
                   }
               ],
-              "filter": [filters, {"bool": {"must_not": {"exists": {"field": "deleted_at"}}}}, {"term": {"author": username}}] if filters
-              else [{"bool": {"must_not": {"exists": {"field": "deleted_at"}}}}, {"term": {"author": username}}]
+              "filter": [filters, {"bool": {"must_not": {"exists": {"field": "deleted_at"}}}}, {"term":{"author": username}}, {"term": {"type": "file"}}] if filters
+              else [{"bool": {"must_not": {"exists": {"field": "deleted_at"}}}}, {"term":{"author": username}}, {"term": {"type": "file"}}]
           }
       },
       "sort": [

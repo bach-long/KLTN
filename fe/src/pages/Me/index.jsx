@@ -259,9 +259,14 @@ function Me() {
                       {documents?.folders.map((folder) => (
                         <Col span={4} key={folder.id}>
                           <div
-                            onDoubleClick={() => {
-                              handleFoward(folder.id, folder.name);
-                            }}
+                            onDoubleClick={
+                              folder.deleted_at
+                                ? () => {}
+                                : () => {
+                                    console.log(folder.deleted_at);
+                                    handleFoward(folder.id, folder.name);
+                                  }
+                            }
                           >
                             <Folder
                               folder={folder}
